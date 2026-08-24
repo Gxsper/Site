@@ -72,6 +72,28 @@ export const CATALOG: readonly SeriesDescriptor[] = [
     attribution: ATTRIBUTION_COINMETRICS,
   },
 
+  {
+    /**
+     * ETH/BTC — der exakte Teil von §6.4. Die Ratio kommt direkt aus dem
+     * Handelspaar, nicht aus zwei geteilten USD-Reihen; damit gibt es keine
+     * Alignment-Frage und keinen Rundungsversatz.
+     *
+     * BTC.D, TOTAL2 und TOTAL3 fehlen bewusst: siehe FINDINGS.md §7.
+     */
+    id: 'ethbtc.close',
+    label: 'ETH/BTC',
+    group: 'crypto',
+    unit: 'ratio',
+    nativeFrequency: '1d',
+    provider: 'binance',
+    providerParams: { symbol: 'ETHBTC', interval: '1d' },
+    // Verifiziert: erster 1d-Kline ETHBTC am 2017-07-14, Close 0.090993
+    earliest: '2017-07-14T00:00:00Z',
+    supportsLog: true,
+    updateCadence: HOURLY,
+    attribution: ATTRIBUTION_BINANCE,
+  },
+
   // --------------------------------------------------------------- On-Chain
   {
     id: 'onchain.btc.marketcap',
@@ -297,6 +319,46 @@ export const CATALOG: readonly SeriesDescriptor[] = [
     supportsLog: false,
     updateCadence: HOURLY,
     attribution: ATTRIBUTION_ALTERNATIVEME,
+  },
+
+  {
+    id: 'fred.USREC',
+    label: 'US-Rezession (NBER)',
+    group: 'macro',
+    unit: 'index',
+    nativeFrequency: '1mo',
+    provider: 'fred',
+    providerParams: { series_id: 'USREC', scale: 1 },
+    earliest: '1854-12-01T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.NFCI',
+    label: 'Financial Conditions (NFCI)',
+    group: 'macro',
+    unit: 'index',
+    nativeFrequency: '1w',
+    provider: 'fred',
+    providerParams: { series_id: 'NFCI', scale: 1 },
+    earliest: '1971-01-08T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.DFII10',
+    label: 'Realzins 10J (TIPS)',
+    group: 'rates',
+    unit: 'pct',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'DFII10', scale: 1 },
+    earliest: '2003-01-02T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
   },
 ];
 

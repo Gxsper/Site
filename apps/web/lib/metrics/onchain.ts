@@ -170,6 +170,67 @@ export function approximateMinerRevenueUsd(
   return combine(issuanceUsd, feesUsd, (issuance, fees) => issuance + fees);
 }
 
+/**
+ * Thermocap Multiple (§6.5): Market Cap geteilt durch die **kumulierte**
+ * Miner-Revenue seit Beginn.
+ *
+ * ⚠️ Die Kumulation kann nur so weit zurückreichen wie die übergebene
+ * Einnahmereihe. Beginnt sie später als die Kette selbst, ist der Nenner zu
+ * klein und das Verhältnis systematisch zu hoch. `coverageFrom` in der Antwort
+ * macht das sichtbar — ohne diese Angabe wäre die Zahl irreführend (§11).
+ */
+export interface ThermocapResult {
+  points: SeriesPoint[];
+  /** Ab wann die Einnahmereihe Daten hatte — Grundlage der Kumulation. */
+  coverageFrom: number | null;
+  methodology: string;
+}
+
+export function thermocapMultiple(
+  marketCap: readonly SeriesPoint[],
+  minerRevenueUsd: readonly SeriesPoint[],
+): ThermocapResult {
+  const coverageFrom = minerRevenueUsd[0]?.t ?? null;
+
+  const cumulative = new Map<number, number>();
+  let running = 0;
+  for (const point of minerRevenueUsd) {
+    if (!Number.isFinite(point.v) || point.v < 0) continue;
+    running += point.v;
+    cumulative.set(point.t, running);
+  }
+
+  const points: SeriesPoint[] = [];
+  for (const point of marketCap) {
+    const denominator = cumulative.get(point.t);
+    if (denominator === undefined || denominator <= 0) continue;
+    points.push({ t: point.t, v: point.v / denominator });
+  }
+
+  const from = coverageFrom ? new Date(coverageFrom * 1000).toISOString().slice(0, 10) : '—';
+
+  return {
+    points,
+    coverageFrom,
+    methodology:
+      `Thermocap Multiple = Market Cap / kumulierte Miner-Einnahmen. Die ` +
+      `Kumulation beginnt am ${from}; liegt dieser Tag nach dem Start der Kette, ` +
+      `ist der Nenner zu klein und das Verhältnis entsprechend zu hoch. ` +
+      `Die Einnahmen selbst sind eine Annäherung, siehe unten.`,
+  };
+}
+
+/** Läuft die Einnahmereihe nur über einen Teil der Marktkapitalisierung? */
+export function thermocapIsTruncated(
+  marketCap: readonly SeriesPoint[],
+  coverageFrom: number | null,
+): boolean {
+  const capStart = marketCap[0]?.t;
+  if (capStart === undefined || coverageFrom === null) return true;
+  // Mehr als 30 Tage Versatz zählt als abgeschnitten.
+  return coverageFrom > capStart + 30 * 86_400;
+}
+
 export const APPROXIMATE_REVENUE_NOTE =
   'Angenähert als IssTotUSD + FeeTotNtv × PriceUSD, weil Coin Metrics RevUSD im ' +
   'Community-Tier nicht freigibt. Die offizielle Größe kann abweichen.';

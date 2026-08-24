@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { FearGreedStrip } from '@/components/metrics/fear-greed-strip';
 import { OverlayChart, type ChartLayer } from '@/components/overlay/overlay-chart';
 import type { SeriesPoint } from '@/lib/series/types';
 import { cn } from '@/lib/utils';
@@ -140,6 +141,15 @@ export function RiskDashboard() {
         </Link>
         <span className="text-muted-foreground text-[10px]">Risk-Dashboard</span>
 
+        <nav className="ml-6 flex gap-3 text-[11px]">
+          <Link href="/" className="hover:underline">
+            Overlay-Studio
+          </Link>
+          <Link href="/macro" className="hover:underline">
+            Makro
+          </Link>
+        </nav>
+
         <div className="ml-auto flex items-center gap-1 text-[11px]">
           <span className="text-muted-foreground">Variante</span>
           {(['expanding', 'full'] as const).map((option) => (
@@ -251,6 +261,8 @@ export function RiskDashboard() {
             </>
           )}
         </section>
+
+        <FearGreedStrip />
 
         <section className="border-border bg-card/30 rounded-md border p-3">
           <h2 className="mb-2 text-xs font-semibold">Maximum Drawdown</h2>

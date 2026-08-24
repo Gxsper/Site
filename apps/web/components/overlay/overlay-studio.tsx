@@ -15,6 +15,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -162,6 +163,15 @@ export function OverlayStudio() {
       <header className="border-border flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-2.5">
         <h1 className="text-sm font-semibold tracking-tight">MacroDeck</h1>
         <span className="text-muted-foreground text-[10px]">Overlay-Studio</span>
+
+        <nav className="ml-6 flex gap-3 text-[11px]">
+          <Link href="/macro" className="hover:underline">
+            Makro
+          </Link>
+          <Link href="/risk" className="hover:underline">
+            Risk
+          </Link>
+        </nav>
 
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-0.5">

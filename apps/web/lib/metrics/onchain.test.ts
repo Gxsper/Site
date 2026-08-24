@@ -7,6 +7,8 @@ import {
   puellMultiple,
   realizedCap,
   realizedPrice,
+  thermocapIsTruncated,
+  thermocapMultiple,
 } from '@/lib/metrics/onchain';
 import type { SeriesPoint } from '@/lib/series/types';
 
@@ -146,6 +148,49 @@ describe('puellMultiple', () => {
 
   it('wirft bei weniger als 365 Tagen, statt einen kürzeren Schnitt zu nehmen', () => {
     expect(() => puellMultiple(series(new Array<number>(100).fill(1000)))).toThrow(/365/);
+  });
+});
+
+describe('thermocapMultiple', () => {
+  it('teilt die Market Cap durch die kumulierten Einnahmen', () => {
+    // Einnahmen 100, 100, 100 → kumuliert 100, 200, 300
+    // Market Cap 1000 → 10, 5, 3,333…
+    const result = thermocapMultiple(series([1000, 1000, 1000]), series([100, 100, 100]));
+
+    expect(result.points.map((p) => p.v)).toEqual([10, 5, expect.closeTo(3.3333, 4)]);
+  });
+
+  it('fällt bei gleichbleibender Market Cap monoton', () => {
+    const result = thermocapMultiple(
+      series(new Array<number>(50).fill(1000)),
+      series(new Array<number>(50).fill(10)),
+    );
+
+    for (let i = 1; i < result.points.length; i++) {
+      expect(result.points[i]!.v).toBeLessThan(result.points[i - 1]!.v);
+    }
+  });
+
+  it('meldet, ab wann die Kumulation reicht', () => {
+    const result = thermocapMultiple(series([1000, 1000]), series([100, 100]));
+    expect(result.coverageFrom).toBe(at(0));
+    expect(result.methodology).toMatch(/Kumulation beginnt am/);
+  });
+
+  it('erkennt eine abgeschnittene Einnahmereihe', () => {
+    const cap = series([1000, 1000]);
+    // Einnahmen beginnen erst ein Jahr nach der Market Cap.
+    const spaet = at(0) + 365 * DAY;
+
+    expect(thermocapIsTruncated(cap, spaet)).toBe(true);
+    expect(thermocapIsTruncated(cap, at(0))).toBe(false);
+    expect(thermocapIsTruncated(cap, null)).toBe(true);
+  });
+
+  it('überspringt Tage ohne kumulierte Einnahmen', () => {
+    const result = thermocapMultiple(series([1000, 1000, 1000]), [{ t: at(1), v: 100 }]);
+    expect(result.points).toHaveLength(1);
+    expect(result.points[0]!.t).toBe(at(1));
   });
 });
 

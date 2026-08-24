@@ -205,12 +205,75 @@ hinterlegt und wird end-to-end gegen die laufende API geprüft.
 `BAMLH0A0HYM2` (High-Yield OAS) liefert über CSV nur 795 Punkte ab 2023-08-22.
 Die Ursache ist ungeklärt, deshalb steht die Serie noch nicht im Katalog.
 
+## 7. CoinGecko ⚠️ nur Momentaufnahme — historische Dominance nicht erhältlich
+
+Am 2026-08-24 ohne API-Key geprüft:
+
+| Endpunkt | Ergebnis |
+|---|---|
+| `/global` | ✅ HTTP 200 — aber nur der **aktuelle** Stand |
+| `/global/market_cap_chart` | ❌ HTTP 401 — `error_code: 10005`, PRO-Abo erforderlich |
+| `/coins/{id}/market_chart/range` | ❌ HTTP 401 — `error_code: 10012`, nur **365 Tage** zurück |
+
+§4.1 warnt, der Demo-Plan gebe „nur ca. 1 Jahr Historie". Das gilt auch für den
+schlüssellosen Zugang, und der Endpunkt für historische Gesamtmarktkapitalisierung
+ist gar nicht verfügbar.
+
+**Folge für §6.4:** BTC.D, TOTAL2 und TOTAL3 lassen sich als Zeitreihe über
+mehrere Zyklen **nicht** aus freien Quellen bauen.
+
+### 7.1 Warum kein Ersatz aus Coin Metrics gebaut wurde
+
+Naheliegend wäre, die Dominance aus den Marktkapitalisierungen zu summieren, die
+Coin Metrics frei anbietet — 135 Assets mit `CapMrktCurUSD`. Geprüft und
+verworfen, weil die Summe nachweislich falsch ist:
+
+```
+btc        1557,6 Mrd   58,31 %
+eth         299,8 Mrd   11,22 %
+usdt        189,2 Mrd    7,08 %   ← Aggregat
+usdt_trx     94,3 Mrd    3,53 %   ← dieselben Tether nochmal
+usdt_eth     88,3 Mrd    3,31 %   ← und nochmal
+usdc         65,6 Mrd    2,46 %
+usdc_eth     49,8 Mrd    1,86 %   ← dieselben USDC nochmal
+…
+wbtc          9,0 Mrd    0,34 %   ← BTC ein zweites Mal
+weth          5,1 Mrd    0,19 %   ← ETH ein zweites Mal
+```
+
+Drei Fehlerquellen zugleich:
+
+1. **Doppelzählung.** Stablecoins erscheinen als Aggregat **und** je Chain.
+2. **Wrapped Tokens.** `wbtc` und `weth` zählen BTC und ETH erneut.
+3. **Fehlende Schwergewichte.** `sol` und `bnb` sind im Community-Tier gesperrt
+   (HTTP 403), obwohl `sol` im Katalog auftaucht — ein weiterer Beleg dafür,
+   dass Verfügbarkeit abgefragt und nicht angenommen werden darf.
+
+Der so entstehende BTC-Anteil von 58,31 % liegt zwar zufällig nahe an der
+veröffentlichten Dominance (CoinGecko meldete zeitgleich 59,11 %), weil sich
+doppelt gezählte Stablecoins und fehlende Schwergewichte teilweise aufheben.
+Eine Zahl, deren Richtigkeit auf einer Fehlerkompensation beruht, ist keine
+Messung. Sie wurde deshalb **nicht** gebaut (§11).
+
+### 7.2 Was stattdessen umgesetzt ist
+
+- **ETH/BTC** direkt aus dem Binance-Handelspaar `ETHBTC`, ab **2017-07-14**
+  (verifiziert, erster Close 0,090993). Exakt, ohne Alignment-Frage.
+- **Aktuelle Dominance** aus `/global` als Momentaufnahme mit Zeitstempel,
+  ausdrücklich ohne Verlauf.
+
+Für BTC.D über mehrere Halvings wäre ein bezahlter Zugang nötig — dieselbe
+Entscheidung, die schon beim Stooq-Ersatz aussteht.
+
 ## Offene Punkte
 
 1. **Aktien-/Index-Quelle ersetzen (§4.2).** Stooq ist tot. Kandidaten: FRED (`SP500`,
    `NASDAQ100`, `VIXCLS`, `DTWEXBGS`) — kostenlos und bereits im Stack, aber Aktienserien
    nur ~10 Jahre und 1 Tag verzögert; oder ein bezahlter Anbieter für tiefe Historie.
-2. ~~`FRED_API_KEY` fehlt~~ — gelöst über den CSV-Transport, siehe ADR 0002. Ein
+
+2. **Historische Dominance (§6.4).** Nur mit bezahltem CoinGecko-Zugang oder
+   einer anderen lizenzierten Quelle. Siehe Abschnitt 7.
+3. ~~`FRED_API_KEY` fehlt~~ — gelöst über den CSV-Transport, siehe ADR 0002. Ein
    Key bleibt wünschenswert, weil die dokumentierte API stabiler zugesichert ist.
-3. ~~Docker-Engine nicht gestartet~~ — gelöst: Postgres nativ, Cache über Postgres
+4. ~~Docker-Engine nicht gestartet~~ — gelöst: Postgres nativ, Cache über Postgres
    statt Redis, siehe ADR 0001.
