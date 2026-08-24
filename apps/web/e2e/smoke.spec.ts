@@ -99,9 +99,19 @@ test.describe('Makro-Seite', () => {
     await page.goto('/macro');
 
     await expect(page.getByRole('heading', { name: /Net Liquidity gegen Bitcoin/ })).toBeVisible();
-    await expect(page.getByText(/Bestes Lead\/Lag auf Log-Returns/)).toBeVisible();
-    // Auf gefüllten Daten muss die Warnung aus §5.4 erscheinen.
-    await expect(page.getByText(/Korrelation auf gefüllten Daten/)).toBeVisible();
+
+    // Entweder steht dort die Zahl, oder es steht dort, warum es keine gibt.
+    // Was §11 verbietet, ist die dritte Möglichkeit: gar nichts. Ob Variante
+    // eins oder zwei erscheint, hängt davon ab, wie viel Historie schon in der
+    // Datenbank liegt — in CI startet sie leer.
+    const wert = page.getByText(/Bestes Lead\/Lag auf Log-Returns/);
+    const grund = page.getByText(/Kein Lead\/Lag berechenbar/);
+    await expect(wert.or(grund).first()).toBeVisible();
+
+    // Die Warnung aus §5.4 gehört zur Zahl — ohne Zahl gibt es nichts zu warnen.
+    if (await wert.isVisible()) {
+      await expect(page.getByText(/Korrelation auf gefüllten Daten/)).toBeVisible();
+    }
   });
 
   test('lädt alle Panels ohne Fehlermeldung', async ({ page }) => {

@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { OverlayChart, type ChartLayer } from '@/components/overlay/overlay-chart';
 import { fetchSeries } from '@/lib/api-client';
 import { colorForIndex } from '@/lib/url-state';
+import { MIN_SAMPLE } from '@/lib/series/correlation';
 
 const DAY = 86_400;
 
@@ -120,6 +121,13 @@ export function MacroDashboard() {
 
   const best = liquidity.data?.correlation?.best ?? null;
 
+  // Groesste Stichprobe ueber alle Verschiebungen — sie sagt, wie weit es bis
+  // zu einer rechenbaren Korrelation fehlt, wenn `best` null ist.
+  const groessteStichprobe = (liquidity.data?.correlation?.leadLag ?? []).reduce(
+    (max, punkt) => Math.max(max, punkt.n),
+    0,
+  );
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-border flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-2.5">
@@ -198,7 +206,7 @@ export function MacroDashboard() {
               </div>
               <OverlayChart t={liquidity.data.aligned.t} layers={liquidityLayers} logScale={false} height={340} />
 
-              {best && (
+              {best ? (
                 <p className="text-muted-foreground mt-2 text-[10px]">
                   Bestes Lead/Lag auf Log-Returns:{' '}
                   <span className="text-foreground tabular-nums">
@@ -208,6 +216,19 @@ export function MacroDashboard() {
                   mit r = <span className="text-foreground tabular-nums">{best.r?.toFixed(3) ?? '—'}</span>{' '}
                   (n = {best.n.toLocaleString('de-DE')}). Der Regler oben ändert nur die
                   Darstellung, nicht diese Rechnung.
+                </p>
+              ) : (
+                // §11: eine Kennzahl, die nicht gerechnet werden kann, wird nicht
+                // stillschweigend weggelassen — der Grund steht da, wo sonst die
+                // Zahl stünde.
+                <p className="text-muted-foreground mt-2 text-[10px]">
+                  Kein Lead/Lag berechenbar: Eine Korrelation braucht mindestens{' '}
+                  <span className="text-foreground tabular-nums">{MIN_SAMPLE}</span> gemeinsame
+                  Log-Return-Paare, hier sind es höchstens{' '}
+                  <span className="text-foreground tabular-nums">
+                    {groessteStichprobe.toLocaleString('de-DE')}
+                  </span>
+                  . Geschätzt wird nichts.
                 </p>
               )}
               {liquidity.data.correlation?.warning && (
