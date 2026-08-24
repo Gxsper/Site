@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T10:42:02.421Z",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=3",
+    "docs": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data",
+    "httpStatus": 200,
+    "contentType": "application/json;charset=UTF-8",
+    "durationMs": 304,
+    "note": "Nur Dokumentation der Response-Shape. Nie Laufzeitquelle (PROJECT_SPEC.md §0.3)."
+  },
+  "response": [
+    {
+      "symbol": "BTCUSDT",
+      "fundingTime": 1787500800006,
+      "fundingRate": "0.00010000",
+      "markPrice": "77128.59832084",
+      "rateType": "Regular"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "fundingTime": 1787529600001,
+      "fundingRate": "0.00010000",
+      "markPrice": "77710.80000000",
+      "rateType": "Regular"
+    },
+    {
+      "symbol": "BTCUSDT",
+      "fundingTime": 1787558400002,
+      "fundingRate": "0.00010000",
+      "markPrice": "77292.21472264",
+      "rateType": "Regular"
+    }
+  ]
+}

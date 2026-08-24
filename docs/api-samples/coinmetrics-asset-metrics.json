@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T10:42:56.894Z",
+    "url": "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=btc&metrics=PriceUSD,CapMrktCurUSD,SplyCur,CapMVRVCur&frequency=1d&page_size=3&start_time=2024-01-01",
+    "docs": "https://docs.coinmetrics.io/api/v4/",
+    "httpStatus": 200,
+    "contentType": "application/json",
+    "note": "Nur Dokumentation der Response-Shape. Nie Laufzeitquelle (PROJECT_SPEC.md 0.3)."
+  },
+  "response": {
+    "data": [
+      {
+        "asset": "btc",
+        "time": "2026-08-21T00:00:00.000000000Z",
+        "CapMVRVCur": "1.483722221375724402",
+        "CapMrktCurUSD": "1572928699609.4886537206383584",
+        "PriceUSD": "78359.170712256",
+        "SplyCur": "20073319.88473265"
+      },
+      {
+        "asset": "btc",
+        "time": "2026-08-22T00:00:00.000000000Z",
+        "CapMVRVCur": "1.457789242610116096",
+        "CapMrktCurUSD": "1546085345087.560678114102604964",
+        "PriceUSD": "77020.1308082058",
+        "SplyCur": "20073782.38473258"
+      },
+      {
+        "asset": "btc",
+        "time": "2026-08-23T00:00:00.000000000Z",
+        "CapMVRVCur": "1.468270768531389904",
+        "CapMrktCurUSD": "1557618536265.254449053113497224",
+        "PriceUSD": "77593.0280291116",
+        "SplyCur": "20074207.38472614"
+      }
+    ],
+    "next_page_token": "0.MjAyNi0wOC0yMVQwMDowMDowMFo",
+    "next_page_url": "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=btc&metrics=PriceUSD,CapMrktCurUSD,SplyCur,CapMVRVCur&frequency=1d&page_size=3&start_time=2024-01-01&next_page_token=0.MjAyNi0wOC0yMVQwMDowMDowMFo"
+  }
+}

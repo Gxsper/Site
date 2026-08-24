@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T10:42:02.982Z",
+    "url": "https://stooq.com/q/d/l/?s=%5Espx&i=d&d1=20240102&d2=20240105",
+    "docs": "https://stooq.com/db/h/",
+    "httpStatus": 200,
+    "contentType": "text/html; charset=utf-8",
+    "durationMs": 72,
+    "note": "NICHT NUTZBAR: liefert kein CSV, sondern eine JavaScript-Proof-of-Work-Bot-Pruefung. Getestet mit eigenem User-Agent, Node-Default und Accept: text/csv. Die Pruefung wird nicht umgangen. Siehe FINDINGS.md Abschnitt 5.",
+    "usable": false
+  },
+  "response": {
+    "_raw": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"></head><body><noscript>This site requires JavaScript to verify your browser. Please enable JavaScript and reload.</noscript><script nonce=\"vuFJYEHKaVB8PI2jWUpCeQ\">\n(async()=>{const c=\"AAAAAGqMH_rdoVCKWZ6RB_mZSqGCm8mgTbO4tOGtknOwCzUpREoi429h80Y\",d=4,t=\"0\".repeat(d),e=new TextEncoder;let n=0;while(1){const h=await crypto.subtle.digest(\"SHA-256\",e.encode(c+n)),x=Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,\"0\")).join(\"\");if(x.startsWith(t))break;n++}const r=await fetch(\"/__verify\",{method:\"POST\",headers:{\"Content-Type\":\"application/x-www-form-urlencoded\"},body:\"c=\"+encodeURIComponent(c)+\"&n=\"+n,credentials:\"same-origin\"});if(r.ok)location.reload()})();\n</script></body></html>\n"
+  }
+}

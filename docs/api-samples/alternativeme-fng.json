@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T10:42:03.313Z",
+    "url": "https://api.alternative.me/fng/?limit=3&format=json",
+    "docs": "https://alternative.me/crypto/fear-and-greed-index/",
+    "httpStatus": 200,
+    "contentType": "application/json",
+    "durationMs": 328,
+    "note": "Nur Dokumentation der Response-Shape. Nie Laufzeitquelle (PROJECT_SPEC.md §0.3)."
+  },
+  "response": {
+    "name": "Fear and Greed Index",
+    "data": [
+      {
+        "value": "73",
+        "value_classification": "Greed",
+        "timestamp": "1787529600",
+        "time_until_update": "47878"
+      },
+      {
+        "value": "66",
+        "value_classification": "Greed",
+        "timestamp": "1787443200"
+      },
+      {
+        "value": "71",
+        "value_classification": "Greed",
+        "timestamp": "1787356800"
+      }
+    ],
+    "metadata": {
+      "error": null
+    }
+  }
+}

@@ -1,0 +1,457 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T10:42:02.909Z",
+    "url": "https://community-api.coinmetrics.io/v4/catalog-v2/asset-metrics?assets=btc&page_size=1",
+    "docs": "https://docs.coinmetrics.io/api/v4/#tag/Catalog-v2",
+    "httpStatus": 200,
+    "contentType": "application/json",
+    "durationMs": 125,
+    "note": "Nur Dokumentation der Response-Shape. Nie Laufzeitquelle (PROJECT_SPEC.md §0.3)."
+  },
+  "response": {
+    "data": [
+      {
+        "asset": "btc",
+        "metrics": [
+          {
+            "metric": "AdrActCnt",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "AdrBalCnt",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "AssetCompletionTime",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "AssetEODCompletionTime",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "BlkCnt",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "CapMVRVCur",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2010-07-18T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "CapMrktCurUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2010-07-18T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "CapMrktEstUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2019-06-22T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "FeeTotNtv",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "FlowInExNtv",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-04-24T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "FlowInExUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-04-24T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "FlowOutExNtv",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-04-24T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "FlowOutExUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-04-24T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "HashRate",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-09T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "IssTotNtv",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-09T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "IssTotUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2010-07-18T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "PriceBTC",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "PriceUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2010-07-18T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "ROI1yr",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-07-18T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "ROI30d",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2010-08-17T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "ReferenceRate",
+            "frequencies": [
+              {
+                "frequency": "1s",
+                "min_time": "2026-08-17T09:42:03.000000000Z",
+                "max_time": "2026-08-24T10:40:42.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1m",
+                "min_time": "2026-08-17T09:43:00.000000000Z",
+                "max_time": "2026-08-24T10:40:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1h",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T10:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T00:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d-ny-close",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-23T20:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "ReferenceRateETH",
+            "frequencies": [
+              {
+                "frequency": "1s",
+                "min_time": "2026-08-17T09:42:03.000000000Z",
+                "max_time": "2026-08-24T10:40:42.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1m",
+                "min_time": "2026-08-17T09:43:00.000000000Z",
+                "max_time": "2026-08-24T10:40:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1h",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T10:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T00:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d-ny-close",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-23T20:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "ReferenceRateEUR",
+            "frequencies": [
+              {
+                "frequency": "1s",
+                "min_time": "2026-08-17T09:42:03.000000000Z",
+                "max_time": "2026-08-24T10:40:44.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1m",
+                "min_time": "2026-08-17T09:43:00.000000000Z",
+                "max_time": "2026-08-24T10:40:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1h",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T10:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T00:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d-ny-close",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-23T20:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "ReferenceRateUSD",
+            "frequencies": [
+              {
+                "frequency": "1s",
+                "min_time": "2026-08-17T09:42:03.000000000Z",
+                "max_time": "2026-08-24T10:40:42.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1m",
+                "min_time": "2026-08-17T09:43:00.000000000Z",
+                "max_time": "2026-08-24T10:40:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1h",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T10:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-24T00:00:00.000000000Z",
+                "community": true
+              },
+              {
+                "frequency": "1d-ny-close",
+                "min_time": "2026-08-17T10:00:00.000000000Z",
+                "max_time": "2026-08-23T20:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "SplyCur",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "SplyExNtv",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-04-24T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "SplyExUSD",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2011-04-24T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "SplyExpFut10yr",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "TxCnt",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "TxTfrCnt",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2009-01-03T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          },
+          {
+            "metric": "volume_reported_spot_usd_1d",
+            "frequencies": [
+              {
+                "frequency": "1d",
+                "min_time": "2010-07-18T00:00:00.000000000Z",
+                "max_time": "2026-08-23T00:00:00.000000000Z",
+                "community": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
