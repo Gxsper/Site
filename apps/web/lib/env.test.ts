@@ -32,8 +32,7 @@ describe('getEnv', () => {
   });
 
   it('bricht hart ab, wenn DATABASE_URL fehlt', () => {
-    const { DATABASE_URL: _omitted, ...withoutDb } = validInfra;
-    expect(() => getEnv(withoutDb)).toThrow(EnvError);
+    expect(() => getEnv({ REDIS_URL: validInfra.REDIS_URL })).toThrow(EnvError);
   });
 
   it('lehnt eine DATABASE_URL mit falschem Schema ab, statt sie zu raten', () => {

@@ -19,7 +19,6 @@ export { schema };
 type Db = NodePgDatabase<typeof schema>;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __macrodeckPool: Pool | undefined;
 }
 
