@@ -183,9 +183,29 @@ Kostenlose Anbieter mit ausreichender Stufe: Neon, Supabase.
 
 ### 6.3 Der Nachtjob im gehosteten Betrieb
 
-`netlify/functions/nightly.mts` läuft täglich um 04:15 UTC und ruft
-`/api/cron/nightly` auf. Die Logik ist dieselbe wie bei `npm run nightly` —
-beide benutzen `lib/series/nightly.ts`, damit sie nicht auseinanderlaufen.
+Drei Teile, und der Zuschnitt hat einen gemessenen Grund:
+
+| Datei | Rolle |
+|---|---|
+| `netlify/functions/nightly.mts` | hält nur den Termin (04:15 UTC) und stößt die Hintergrundfunktion an |
+| `netlify/functions/nightly-run-background.mts` | ruft die Route abschnittsweise auf, bis der Katalog durch ist |
+| `apps/web/app/api/cron/nightly/route.ts` | macht die Arbeit, ein Abschnitt je Aufruf |
+
+**Warum nicht ein einzelner Aufruf?** Gemessen am 2026-08-24 gegen die
+gehostete Seite: ein Aufruf über den vollen Katalog endete nach 30 s mit
+HTTP 504. Netlify schneidet planbare und normal aufgerufene Funktionen bei
+30 s ab, auf allen Tarifen. Nur **Hintergrundfunktionen** dürfen bis zu 15
+Minuten laufen — erkennbar allein am Dateinamen auf `-background`.
+
+Die Route läuft deshalb 20 s und meldet mit `nextOffset`, bei welcher
+Katalogposition fortzusetzen ist; die Hintergrundfunktion reicht den Wert in
+den nächsten Aufruf. Bewegt sich `nextOffset` nicht, bricht sie ab, statt
+dieselbe Serie endlos zu wiederholen.
+
+Die Arbeit selbst bleibt in `lib/series/nightly.ts` — dieselbe Funktion, die
+auch `npm run nightly` benutzt, damit lokaler und gehosteter Lauf nicht
+auseinanderlaufen. Lokal gibt es kein Zeitbudget, dort läuft der Katalog in
+einem Stück durch.
 
 Die Route ist durch `CRON_SECRET` geschützt. Ohne diesen Wert verweigert sie
 den Dienst, statt ungeschützt offen zu stehen: sie stößt Dutzende
@@ -197,7 +217,7 @@ Lokal prüfen:
 curl -X POST -H "authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/nightly
 ```
 
-Gemessen am 2026-08-24: 38 Serien in 10 Sekunden.
+Gemessen am 2026-08-24: 38 Serien in 10 Sekunden (lokal, ohne Zeitbudget).
 
 ### 6.4 Was gehostet **nicht** läuft
 

@@ -46,11 +46,20 @@ export interface NightlyReport {
   empty: number;
   results: NightlyResult[];
   durationMs: number;
+  /**
+   * Index der ersten Serie, die im Zeitbudget nicht mehr drankam — oder `null`,
+   * wenn der Katalog vollständig durchlief. Der Aufrufer reicht ihn als
+   * `offset` in den nächsten Aufruf und setzt so fort, wo abgebrochen wurde.
+   */
+  nextOffset: number | null;
 }
 
 export interface NightlyOptions {
   /** Zeitbudget. Serverless-Funktionen werden hart abgeschnitten. */
   deadlineMs?: number;
+  /** Ab welcher Katalogposition begonnen wird. Für die Fortsetzung nach einem
+   *  Abbruch am Zeitbudget. */
+  offset?: number;
   onResult?: (result: NightlyResult) => void;
 }
 
@@ -67,22 +76,18 @@ export async function runNightly(options: NightlyOptions = {}): Promise<NightlyR
   const from = to - LOOKBACK_DAYS * DAY;
 
   const results: NightlyResult[] = [];
+  const offset = options.offset ?? 0;
+  let nextOffset: number | null = null;
 
-  for (const descriptor of CATALOG) {
-    // Serverless-Funktionen haben ein hartes Zeitlimit. Lieber sauber
-    // abbrechen und im Bericht sagen, was offen blieb, als mitten im
-    // Schreiben abgeschnitten zu werden.
+  for (let index = offset; index < CATALOG.length; index += 1) {
+    const descriptor = CATALOG[index]!;
+
+    // Serverless-Funktionen haben ein hartes Zeitlimit. Hier wird deshalb
+    // abgebrochen und die Position gemerkt, statt die restlichen Serien als
+    // Fehlschläge zu melden — offen ist nicht dasselbe wie kaputt.
     if (options.deadlineMs && Date.now() - started > options.deadlineMs) {
-      results.push({
-        id: descriptor.id,
-        ok: false,
-        points: 0,
-        durationMs: 0,
-        newestAt: null,
-        message: 'Zeitbudget aufgebraucht — beim nächsten Lauf erneut versucht.',
-      });
-      options.onResult?.(results[results.length - 1]!);
-      continue;
+      nextOffset = index;
+      break;
     }
 
     const seriesStarted = Date.now();
@@ -125,5 +130,6 @@ export async function runNightly(options: NightlyOptions = {}): Promise<NightlyR
     empty: results.filter((r) => r.ok && r.points === 0).length,
     results,
     durationMs: Date.now() - started,
+    nextOffset,
   };
 }

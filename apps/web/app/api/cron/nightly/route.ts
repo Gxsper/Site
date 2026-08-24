@@ -22,10 +22,17 @@ import { runNightly } from '@/lib/series/nightly';
 export const dynamic = 'force-dynamic';
 
 /**
- * Zeitbudget. Netlify-Funktionen laufen im Hintergrund bis zu 15 Minuten;
- * hier bleibt bewusst Luft, damit der Bericht noch geschrieben wird.
+ * Zeitbudget für **einen** Aufruf.
+ *
+ * Gemessen am 2026-08-24: ein Aufruf mit dem vollen Katalog lief nach 30 s in
+ * einen 504. Netlify schneidet synchron aufgerufene Funktionen dort hart ab,
+ * auf allen Tarifen. Der Job passt also nicht in einen Aufruf und wird in
+ * Abschnitte zerlegt: hier laufen lassen, bis das Budget aufgebraucht ist,
+ * `nextOffset` zurückgeben, und der Aufrufer setzt damit fort.
+ *
+ * 20 s lässt Luft für den letzten Serienabruf und das Schreiben des Berichts.
  */
-const DEADLINE_MS = 12 * 60_000;
+const DEADLINE_MS = 20_000;
 
 /** Vergleich ohne frühen Abbruch — sonst verrät die Laufzeit das Geheimnis. */
 function secretMatches(provided: string, expected: string): boolean {
@@ -61,7 +68,18 @@ export async function POST(request: Request) {
 
   installTelemetrySink();
 
-  const report = await runNightly({ deadlineMs: DEADLINE_MS });
+  // Fortsetzung eines abgebrochenen Abschnitts: ?offset=<nextOffset>.
+  const offsetParam = new URL(request.url).searchParams.get('offset');
+  const offset = offsetParam === null ? 0 : Number(offsetParam);
+
+  if (!Number.isInteger(offset) || offset < 0) {
+    return NextResponse.json(
+      { error: 'offset muss eine nicht-negative ganze Zahl sein.' },
+      { status: 400 },
+    );
+  }
+
+  const report = await runNightly({ deadlineMs: DEADLINE_MS, offset });
   await flushTelemetry();
 
   return NextResponse.json(

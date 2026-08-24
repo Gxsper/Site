@@ -82,7 +82,14 @@ test.describe('Risk-Dashboard', () => {
   test('weist bei der full-Variante auf die Instabilität hin', async ({ page }) => {
     await page.goto('/risk');
     await page.getByRole('button', { name: 'full', exact: true }).click();
-    await page.getByText('Methodik', { exact: true }).nth(1).click();
+
+    // Die Klappe über ihren Inhalt greifen, nicht über ihre Position: jede
+    // Methodik-Klappe erscheint erst, wenn *ihre* Abfrage Daten hat. Ein Index
+    // waere ein Rennen gegen die Ladereihenfolge — bei gefuellter Datenbank
+    // gewinnt man es, bei leerer nicht.
+    const klappe = page.locator('details', { hasText: /rückwirkend nicht stabil/ });
+    await expect(klappe).toBeAttached({ timeout: 60_000 });
+    await klappe.locator('summary').click();
     await expect(page.getByText(/rückwirkend nicht stabil/)).toBeVisible();
   });
 });
