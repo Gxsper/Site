@@ -1,11 +1,12 @@
 /**
- * Nachtjob (PROJECT_SPEC.md §10, §13 Phase 7).
+ * Nachtjob für den lokalen Betrieb (PROJECT_SPEC.md §10, §13 Phase 7).
  *
  *   npm run nightly
  *
- * Holt für jede Katalogserie nur das Delta seit dem letzten Punkt — die
- * Planung dafür steckt in `planFetches`, hier wird sie nur angestoßen. Einmal
- * geholte Historie wird nie erneut angefragt.
+ * Die eigentliche Arbeit steckt in `lib/series/nightly.ts` — dieselbe Logik
+ * benutzt die Route `/api/cron/nightly`, die im gehosteten Betrieb von einer
+ * geplanten Netlify-Funktion angestoßen wird. So können beide Wege nicht
+ * auseinanderlaufen.
  *
  * Exit-Code 0 nur, wenn alle Serien durchliefen. Ein Cron-Job, der immer 0
  * zurückgibt, meldet auch nie ein Problem.
@@ -15,76 +16,45 @@
 
 import { loadRootEnv } from '../lib/root-env';
 import { flushTelemetry, installTelemetrySink } from '../lib/db/telemetry-sink';
-import { CATALOG } from '../lib/series/catalog';
-import { loadSeries } from '../lib/series/service';
+import { runNightly } from '../lib/series/nightly';
 
 loadRootEnv();
 
-// Ohne den Sink taucht der Lauf spaeter nicht in /api/health auf — und
+// Ohne den Sink taucht der Lauf später nicht in /api/health auf — und
 // ausgerechnet die Skripte machen die meisten Provider-Anfragen.
 installTelemetrySink();
 
-/** Wie weit zurück der Nachtjob prüft. Ältere Lücken schließt der Backfill. */
-const LOOKBACK_DAYS = 30;
-const DAY = 86_400;
-
-/** Kurze Pause zwischen Serien, damit der Token-Bucket nicht ständig greift. */
-function pause(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function isoDay(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
 }
 
 async function main(): Promise<number> {
-  const to = Math.floor(Date.now() / 1000);
-  const from = to - LOOKBACK_DAYS * DAY;
-
-  console.log(
-    `Nachtjob ${new Date(from * 1000).toISOString().slice(0, 10)} .. ` +
-      `${new Date(to * 1000).toISOString().slice(0, 10)} für ${CATALOG.length} Serien\n`,
-  );
-
-  let failures = 0;
-  let unchanged = 0;
-
-  for (const descriptor of CATALOG) {
-    const started = Date.now();
-    try {
-      const { response, warning } = await loadSeries(descriptor, { from, to });
-      const newest = response.points[response.points.length - 1];
-
-      if (warning) {
-        console.warn(`WARN   ${descriptor.id.padEnd(24)} ${warning}`);
-        failures++;
-        continue;
+  const report = await runNightly({
+    onResult: (result) => {
+      if (result.ok) {
+        const label = result.newestAt ? isoDay(result.newestAt) : '(keine Punkte im Fenster)';
+        console.log(
+          `OK     ${result.id.padEnd(24)} ${String(result.points).padStart(5)} Punkte  ` +
+            `${String(result.durationMs).padStart(6)}ms  neuester ${label}`,
+        );
+      } else {
+        console.error(`FEHLER ${result.id.padEnd(24)} ${result.message ?? ''}`);
       }
-
-      const label = newest
-        ? new Date(newest.t * 1000).toISOString().slice(0, 10)
-        : '(keine Punkte im Fenster)';
-      console.log(
-        `OK     ${descriptor.id.padEnd(24)} ${String(response.points.length).padStart(5)} Punkte  ` +
-          `${String(Date.now() - started).padStart(6)}ms  neuester ${label}`,
-      );
-      if (response.points.length === 0) unchanged++;
-    } catch (error) {
-      console.error(
-        `FEHLER ${descriptor.id.padEnd(24)} ${error instanceof Error ? error.message : String(error)}`,
-      );
-      failures++;
-    }
-
-    await pause(250);
-  }
+    },
+  });
 
   console.log(
-    `\n${CATALOG.length - failures} von ${CATALOG.length} Serien aktualisiert` +
-      (unchanged > 0 ? `, ${unchanged} ohne Punkte im Fenster` : ''),
+    `\nZeitraum ${isoDay(report.from)} .. ${isoDay(report.to)}\n` +
+      `${report.succeeded} von ${report.total} Serien aktualisiert` +
+      (report.empty > 0 ? `, ${report.empty} ohne Punkte im Fenster` : '') +
+      ` — ${Math.round(report.durationMs / 1000)}s`,
   );
 
-  // Telemetriepuffer leeren, sonst fehlen die letzten Eintraege in /api/health.
+  // Telemetriepuffer leeren, sonst fehlen die letzten Einträge in /api/health.
   await flushTelemetry();
 
-  if (failures > 0) {
-    console.error(`${failures} Serie(n) mit Problemen — siehe /api/health.`);
+  if (report.failed > 0) {
+    console.error(`${report.failed} Serie(n) mit Problemen — siehe /api/health.`);
     return 1;
   }
   return 0;

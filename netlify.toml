@@ -1,0 +1,48 @@
+# Netlify-Konfiguration für MacroDeck.
+#
+# Wichtig zum Verständnis: Diese Datei greift nur bei einem Deploy **aus einem
+# Git-Repository**. Zieht man den Ordner per Drag & Drop ins Netlify-Fenster,
+# wird nichts gebaut — dann liefert Netlify die Dateien roh aus, findet keine
+# index.html und zeigt „Page not found".
+#
+# Aufbau ist ein npm-workspaces-Monorepo. Der Build läuft deshalb im
+# Wurzelverzeichnis (dort installiert `npm ci` alle Workspaces), und das
+# Ergebnis liegt in apps/web/.next.
+
+[build]
+  command = "npm run build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  # .nvmrc steht auf 24; hier bewusst die aktuelle LTS, weil Netlify sie
+  # sicher unterstützt. Der Code braucht mindestens 20.11 (import.meta.dirname).
+  NODE_VERSION = "22"
+  # Nur Produktionsabhängigkeiten wären zu wenig — der Build braucht
+  # TypeScript, Tailwind und die Next-Werkzeuge.
+  NPM_FLAGS = "--include=dev"
+
+# Der Next.js-Runtime von Netlify übersetzt Route-Handler und SSR-Seiten in
+# Funktionen. Ohne ihn gäbe es nur statische Dateien und alle /api-Routen
+# lieferten 404.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  # Die geplante Funktion liegt außerhalb von apps/web, weil sie nicht Teil
+  # der Next-App ist — sie stößt sie nur an.
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    # Marktdaten sind nie „für immer gültig"; jede Antwort wird frisch geholt
+    # oder kommt aus dem eigenen Cache mit sichtbarem Stale-Zustand (§10, §11).
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"

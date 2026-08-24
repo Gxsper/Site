@@ -120,7 +120,92 @@ Der Test steht in `apps/web/e2e/performance.spec.ts` und läuft mit
 `npm run test:e2e`. Im Produktionsbuild ist es schneller — der Dev-Modus
 rendert doppelt und ohne Optimierung.
 
-## 6. Sicherung
+## 6. Gehosteter Betrieb auf Netlify
+
+### 6.1 Was vorher klar sein muss
+
+**Drag & Drop funktioniert nicht.** Zieht man den Ordner ins Netlify-Fenster,
+werden die Dateien roh ausgeliefert — kein `npm install`, kein Build, kein
+Node. Da es keine `index.html` gibt, antwortet Netlify mit „Page not found".
+Das ist kein Konfigurationsfehler: eine Next.js-App *ist* keine fertige
+Website, sondern Quellcode, aus dem erst ein Server gebaut wird.
+
+Der Weg führt deshalb zwingend über ein **Git-Repository**.
+
+**Eine erreichbare Datenbank ist Pflicht.** Eine lokale Postgres-Instanz ist
+von Netlify aus nicht erreichbar. Ohne externe Datenbank meldet jede Seite
+„Datenbank nicht erreichbar" — technisch korrekt, aber nutzlos.
+Kostenlose Anbieter mit ausreichender Stufe: Neon, Supabase.
+
+### 6.2 Einrichtung
+
+1. Repository zu GitHub hochladen (`.env.local` ist von `.gitignore` erfasst
+   und landet nicht dort).
+2. Bei Neon ein Projekt anlegen, Region Europa. Die Verbindungszeichenkette
+   sieht so aus:
+   `postgresql://user:passwort@ep-….eu-central-1.aws.neon.tech/neondb?sslmode=require`
+3. Diese Zeichenkette lokal in `.env.local` als `DATABASE_URL` eintragen, dann
+   einmalig:
+
+   ```bash
+   npm run db:migrate
+   npm run backfill -- --all --from 2010-01-01
+   ```
+
+   Das legt das Schema an und füllt alle Serien. Ein Datenbank-Dump ist nicht
+   nötig — die Historie kommt ohnehin frisch von den Quellen.
+4. In Netlify das Repository verbinden. `netlify.toml` im Wurzelverzeichnis
+   liefert Build-Befehl, Ausgabeverzeichnis und den Next.js-Runtime bereits mit.
+5. Unter *Site configuration → Environment variables* setzen:
+
+   | Variable | Wert |
+   |---|---|
+   | `DATABASE_URL` | die Neon-Zeichenkette aus Schritt 2 |
+   | `CRON_SECRET` | mindestens 16 Zeichen, siehe unten |
+   | `REDIS_URL` | leer lassen — der Cache läuft dann über Postgres |
+
+   `CRON_SECRET` erzeugen:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
+   ```
+
+### 6.3 Der Nachtjob im gehosteten Betrieb
+
+`netlify/functions/nightly.mts` läuft täglich um 04:15 UTC und ruft
+`/api/cron/nightly` auf. Die Logik ist dieselbe wie bei `npm run nightly` —
+beide benutzen `lib/series/nightly.ts`, damit sie nicht auseinanderlaufen.
+
+Die Route ist durch `CRON_SECRET` geschützt. Ohne diesen Wert verweigert sie
+den Dienst, statt ungeschützt offen zu stehen: sie stößt Dutzende
+Provider-Anfragen an, und bei CoinGecko zählt jede gegen ein Monatsbudget.
+
+Lokal prüfen:
+
+```bash
+curl -X POST -H "authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/nightly
+```
+
+Gemessen am 2026-08-24: 38 Serien in 10 Sekunden.
+
+### 6.4 Was gehostet **nicht** läuft
+
+Der **Liquidations-Worker** ist ein Dauerprozess und hat auf Netlify keinen
+Platz. Zwei Möglichkeiten:
+
+- Worker lokal laufen lassen, aber gegen die Neon-Datenbank (`DATABASE_URL` in
+  der lokalen `.env.local` zeigt dorthin). Dann erscheinen die Liquidationen
+  auch auf der gehosteten Seite — allerdings nur, solange der Rechner läuft.
+- Auf die Liquidationen verzichten. Alle übrigen Seiten sind davon unberührt;
+  die Derivate-Seite zeigt dann den Hinweis, dass noch nichts aufgezeichnet ist.
+
+### 6.5 Öffentlich erreichbar
+
+Eine Netlify-Seite ohne Passwortschutz kann jeder mit der Adresse öffnen.
+Für den Eigengebrauch und zum Herzeigen ist das gewollt — die Punkte aus
+Abschnitt 8 (Impressum, Datenschutz, lizenzierte Quellen) gelten dann aber.
+
+## 7. Sicherung
 
 Alles, was nicht erneut geholt werden kann, liegt in Postgres:
 
@@ -132,11 +217,14 @@ Alles, was nicht erneut geholt werden kann, liegt in Postgres:
 pg_dump -U macro -d macrodeck -Fc -f macrodeck-$(date +%F).dump
 ```
 
-## 7. Vor einer Veröffentlichung
+## 8. Vor einer Veröffentlichung
 
 Die Anwendung ist als **persönliches Werkzeug** gebaut. Vor einem öffentlichen
 Betrieb sind die Punkte aus §15 der Spezifikation zu klären:
 
+- **Yahoo Finance**: inoffizieller Endpunkt ohne zugesicherten Vertrag
+  ([ADR 0003](adr/0003-yahoo-transport.md)). Für ein öffentliches Produkt durch
+  eine lizenzierte Quelle ersetzen.
 - **lightweight-charts**: Apache-2.0, aber die TradingView-Attribution
   (`attributionLogo: true`) darf nicht abgeschaltet werden. Sie ist gesetzt.
 - **CoinGecko**: Demo-Zugang ist nicht-kommerziell. Kommerzielle Nutzung
@@ -151,7 +239,7 @@ Betrieb sind die Punkte aus §15 der Spezifikation zu klären:
 - Zusätzlich nötig: Disclaimer „keine Anlageberatung" (steht in jeder Fußzeile),
   Impressum und Datenschutzerklärung nach deutschem Recht.
 
-## 8. Bekannte Grenzen
+## 9. Bekannte Grenzen
 
 Diese Punkte sind keine Fehler, sondern Eigenschaften der freien Datenquellen.
 Sie stehen alle auch im UI, damit niemand sie für Messungen hält:

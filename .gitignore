@@ -8,6 +8,7 @@ coverage/
 next-env.d.ts
 
 .env
+.netlify/
 .env.local
 .env.*.local
 
