@@ -53,8 +53,30 @@ export const FORBIDDEN_PATTERNS = [
   { id: 'dummy', re: /dummy/gi, why: 'Platzhalterwerte — §11' },
   { id: 'placeholder-series', re: /placeholder[_-]?series/gi, why: 'Platzhalter-Zeitreihe — §11' },
   { id: 'generate-placeholder', re: /generate[_-]?placeholder/gi, why: 'Stiller Ersatzwert-Generator — §11' },
-  { id: 'api-samples-import', re: /docs\/api-samples/gi, why: 'Doku-Fixture als Laufzeitquelle — §0.3' },
+  {
+    id: 'api-samples-import',
+    // Nur echte Importe, nicht jede Erwaehnung des Pfades. Ein Fehlertext, der
+    // auf docs/api-samples/ verweist, ist erwuenscht — ein Import von dort ist
+    // der Verstoss.
+    re: /(?:\bfrom|\brequire\s*\(|\bimport\s*\()\s*['"`][^'"`]*docs\/api-samples/gi,
+    why: 'Doku-Fixture als Laufzeitquelle — §0.3',
+  },
 ];
+
+/**
+ * Reine Kommentarzeilen werden uebersprungen. Ein Kommentar fuehrt nichts aus;
+ * ein Hinweis wie "hier bewusst kein Math.random" ist das Gegenteil eines
+ * Verstosses.
+ *
+ * Bewusst konservativ: erkannt werden nur Zeilen, die *beginnen* mit `//`, `*`
+ * oder eine Block-Kommentar-Zeile sind. Code mit angehaengtem Kommentar wird
+ * weiterhin vollstaendig geprueft. Damit kann der Check hoechstens zu viel
+ * melden, nie zu wenig — die richtige Richtung fuer diese Regel.
+ */
+export function isCommentOnlyLine(line) {
+  const trimmed = line.trim();
+  return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
+}
 
 /** Testdateien duerfen konstruierte Daten enthalten. */
 export function isTestFile(relPath) {
@@ -91,6 +113,8 @@ export function scanFile(absPath, relPath) {
   const lines = source.split(/\r?\n/);
 
   for (const [index, line] of lines.entries()) {
+    if (isCommentOnlyLine(line)) continue;
+
     for (const pattern of FORBIDDEN_PATTERNS) {
       pattern.re.lastIndex = 0;
       let match;

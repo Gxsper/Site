@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { isTestFile, scanRoots } from './check-no-mock.mjs';
+import { isCommentOnlyLine, isTestFile, scanRoots } from './check-no-mock.mjs';
 
 /**
  * Der Check aus PROJECT_SPEC.md §11 sichert das gesamte Projekt ab. Wenn er
@@ -78,6 +78,67 @@ describe('scanRoots', () => {
     expect(findings.map((f) => f.patternId)).toContain('api-samples-import');
   });
 
+  it('erkennt auch require() auf ein Doku-Fixture', () => {
+    write('lib/f.ts', "const fred = require('../../docs/api-samples/fred.json');\n");
+
+    const { findings } = scanRoots({ cwd: sandbox, roots: ['lib'] });
+
+    expect(findings.map((f) => f.patternId)).toContain('api-samples-import');
+  });
+
+  it('erlaubt einen Verweis auf docs/api-samples in einem Fehlertext', () => {
+    // Ein Hinweis, wo die verifizierte Response-Shape liegt, ist erwuenscht.
+    write('lib/f.ts', "throw new Error('Shape geaendert — docs/api-samples neu erheben');\n");
+
+    const { findings } = scanRoots({ cwd: sandbox, roots: ['lib'] });
+
+    expect(findings).toHaveLength(0);
+  });
+
+  it('meldet keine reinen Kommentarzeilen', () => {
+    write(
+      'lib/f.ts',
+      [
+        '/**',
+        ' * Jitter bewusst ohne Math.random, siehe docs/api-samples/FINDINGS.md.',
+        ' */',
+        '// Auch hier kein Math.random und kein mockData.',
+        'export const ok = 1;',
+        '',
+      ].join('\n'),
+    );
+
+    const { findings } = scanRoots({ cwd: sandbox, roots: ['lib'] });
+
+    expect(findings).toHaveLength(0);
+  });
+
+  it('prueft Code weiterhin, auch wenn die Datei Kommentare enthaelt', () => {
+    write(
+      'lib/f.ts',
+      [
+        '// Dieser Kommentar erwaehnt Math.random und ist harmlos.',
+        'export function latest() {',
+        '  return Math.random();',
+        '}',
+        '',
+      ].join('\n'),
+    );
+
+    const { findings } = scanRoots({ cwd: sandbox, roots: ['lib'] });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0].line).toBe(3);
+  });
+
+  it('meldet Code mit angehaengtem Kommentar weiterhin', () => {
+    write('lib/f.ts', 'const v = Math.random(); // absichtlich\n');
+
+    const { findings } = scanRoots({ cwd: sandbox, roots: ['lib'] });
+
+    expect(findings).toHaveLength(1);
+  });
+
   it('ignoriert Testdateien — dort sind Fixtures erlaubt', () => {
     write('lib/prices.test.ts', 'const v = Math.random();\n');
     write('lib/prices.spec.tsx', 'const v = Math.random();\n');
@@ -120,6 +181,20 @@ describe('scanRoots', () => {
 
     expect(findings).toHaveLength(2);
     expect(findings[0].column).toBeLessThan(findings[1].column);
+  });
+});
+
+describe('isCommentOnlyLine', () => {
+  it.each([
+    ['// Zeilenkommentar', true],
+    ['  // eingerueckt', true],
+    [' * Blockkommentar-Zeile', true],
+    ['/* Beginn', true],
+    ['const v = 1;', false],
+    ['const v = 1; // mit Kommentar', false],
+    ['const url = "https://x.dev/*";', false],
+  ])('%s -> %s', (input, expected) => {
+    expect(isCommentOnlyLine(input)).toBe(expected);
   });
 });
 
