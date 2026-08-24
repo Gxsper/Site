@@ -56,8 +56,11 @@ export type InfraEnv = z.infer<typeof infraSchema>;
 
 /** Woher man den jeweiligen Key bekommt — erscheint im Fehlertext. */
 export const PROVIDER_KEYS = {
+  // Kein Pflichtfeld: der CSV-Transport kommt ohne Key aus (ADR 0002). Mit Key
+  // liefe FRED über die dokumentierte Schnittstelle — für einen öffentlichen
+  // Betrieb der bessere Weg, siehe docs/DEPLOYMENT.md §8.
   FRED_API_KEY: {
-    required: true,
+    required: false,
     provider: 'FRED (St. Louis Fed)',
     where: 'https://fredaccount.stlouisfed.org/apikeys — kostenlos, sofort aktiv',
   },
