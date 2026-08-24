@@ -182,6 +182,40 @@ export const providerRequests = pgTable(
   (table) => [index('provider_requests_provider_time_idx').on(table.provider, table.requestedAt)],
 );
 
+/**
+ * Cache-Layer 2 (§10). Liegt hier statt in Redis, solange keine REDIS_URL
+ * gesetzt ist — siehe docs/adr/0001-cache-backend.md.
+ *
+ * `expiresAt` ist die harte Grenze. Abgelaufene Eintraege werden beim Lesen
+ * ignoriert und beim Schreiben ueberschrieben; ein Aufraeumjob ist optional.
+ */
+export const cacheEntries = pgTable(
+  'cache_entries',
+  {
+    key: text('key').primaryKey(),
+    value: jsonb('value').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    storedAt: timestamp('stored_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('cache_entries_expires_at_idx').on(table.expiresAt)],
+);
+
+/**
+ * Token-Bucket pro Provider (§10).
+ *
+ * `tokens` wird lazy nachgefuellt: beim Zugriff wird aus der verstrichenen Zeit
+ * seit `updatedAt` berechnet, wie viele Token dazugekommen sind. Das spart
+ * einen Hintergrundjob und ist in einer einzigen atomaren SQL-Anweisung
+ * abbildbar — wichtig, damit zwei gleichzeitige Requests nicht dasselbe Token
+ * verbrauchen.
+ */
+export const rateLimitBuckets = pgTable('rate_limit_buckets', {
+  /** z.B. 'coingecko:minute' oder 'fred:minute'. */
+  bucket: text('bucket').primaryKey(),
+  tokens: doublePrecision('tokens').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type SeriesRow = typeof series.$inferSelect;
 export type NewSeriesRow = typeof series.$inferInsert;
 export type SeriesPointRow = typeof seriesPoints.$inferSelect;

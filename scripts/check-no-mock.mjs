@@ -23,6 +23,7 @@ export const DEFAULT_ROOTS = [
   'apps/web/lib',
   'apps/web/components',
   'apps/web/hooks',
+  'apps/web/scripts',
   'worker/src',
 ];
 

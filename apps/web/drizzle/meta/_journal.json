@@ -8,6 +8,13 @@
       "when": 1787569156575,
       "tag": "0000_lethal_victor_mancha",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787570618634,
+      "tag": "0001_tearful_scorpion",
+      "breakpoints": true
     }
   ]
 }
