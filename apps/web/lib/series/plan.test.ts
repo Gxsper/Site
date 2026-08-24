@@ -116,6 +116,24 @@ describe('planFetches', () => {
     expect(result).toEqual([]);
   });
 
+  /**
+   * Regression: der Head-Cache hält fest, dass der Rand kürzlich geprüft wurde,
+   * aber nicht bis wann. Wurde er für eine Anfrage bis Ende 2024 gesetzt und
+   * fragt jemand kurz darauf bis heute, dürfen die fehlenden Monate nicht
+   * ausbleiben. Die Entscheidung darüber trifft der Aufrufer (service.ts) —
+   * dieser Test hält fest, dass der Planer sie umsetzt.
+   */
+  it('lädt eine große Randlücke nach, sobald headIsFresh false ist', () => {
+    const einJahrSpaeter = JAN20 + 365 * DAY;
+    const result = planFetches({ from: JAN01, to: einJahrSpaeter }, extent(JAN01, JAN20), {
+      headIsFresh: false,
+      earliestSeconds,
+      covered: { from: JAN01, to: JAN20 },
+    });
+
+    expect(result).toEqual([{ from: JAN20 + 1, to: einJahrSpaeter, reason: 'head' }]);
+  });
+
   it('erzeugt keine überlappenden Zeiträume', () => {
     const result = planFetches({ from: JAN01, to: JAN20 }, extent(JAN10, JAN10), notFresh);
 

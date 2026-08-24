@@ -80,8 +80,21 @@ export async function loadSeries(
       ? { from: previous.coveredFromT, to: previous.coveredToT }
       : undefined;
 
+  /**
+   * Der Head-Cache allein genügt nicht.
+   *
+   * Er hält fest, dass der Rand kürzlich geprüft wurde — aber nicht, **bis
+   * wann**. Wurde er für eine Anfrage bis Ende 2024 gesetzt und fragt jemand
+   * kurz darauf bis heute, blockierte er das Nachladen von Monaten an Daten.
+   * Deshalb zählt der Cache-Treffer nur, solange die Lücke am Rand kleiner ist
+   * als eine Aktualisierungsperiode.
+   */
+  const knownTo = covered?.to ?? extent?.maxT ?? range.to;
+  const headGapSeconds = range.to - knownTo;
+  const headIsFresh = head !== null && headGapSeconds <= descriptor.updateCadence;
+
   const plans = planFetches(range, extent, {
-    headIsFresh: head !== null,
+    headIsFresh,
     earliestSeconds: Math.floor(Date.parse(descriptor.earliest) / 1000),
     covered,
   });
