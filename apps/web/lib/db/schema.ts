@@ -67,6 +67,7 @@ export const providerEnum = pgEnum('provider', [
   'coingecko',
   'stooq',
   'coinglass',
+  'yahoo',
   'alternativeme',
   'mempool',
   'derived',

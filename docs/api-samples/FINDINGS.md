@@ -331,14 +331,74 @@ Statt sie mit einem Hinweis zu versehen, zeigt die Derivate-Seite die
 tatsächlich eingetretenen Liquidationen und erklärt an ihrer Stelle, warum
 dort nichts steht.
 
+## 9. Yahoo Finance ✅ — löst die Aktienhistorie ohne Abo
+
+`GET https://query1.finance.yahoo.com/v8/finance/chart/^GSPC?interval=1d&period1=0&period2=…`
+
+```jsonc
+{ "chart": { "result": [ {
+    "meta": { "symbol": "^GSPC", "currency": "USD" },
+    "timestamp": [ 1735743600, … ],
+    "indicators": { "quote": [ { "close": [ 93, 93.46, … ] } ] } } ],
+  "error": null } }
+```
+
+**Zwei Fallen:**
+
+1. **`range=max` liefert Monatswerte**, auch mit `interval=1d`. Gold ergab so
+   267 statt 6 603 Punkte. Nur `period1`/`period2` erzwingen Tagesdaten.
+2. **Zeitstempel stehen auf der Handelseröffnung in Börsenzeit** (`14:30Z` =
+   09:30 New York), nicht auf 00:00 UTC. Ohne Abrundung auf den UTC-Tagesbeginn
+   passt keine dieser Reihen zu einer anderen Tagesserie.
+
+`close` enthält `null` an Tagen ohne Schlusskurs — das wird zur Lücke.
+
+| Serie | Symbol | Punkte | ab | Lücken |
+|---|---|---|---|---|
+| S&P 500 | `^GSPC` | 14 282 | 1970-01-02 | 0 |
+| Nasdaq 100 | `^NDX` | 10 303 | 1985-10-01 | 0 |
+| Dow Jones | `^DJI` | 8 722 | 1992-01-02 | 0 |
+| Gold | `GC=F` | 6 603 | 2000-08-30 | 84 |
+| Silber | `SI=F` | 6 603 | 2000-08-30 | 82 |
+| WTI | `CL=F` | 6 608 | 2000-08-23 | 80 |
+| Dollar-Index | `DX-Y.NYB` | 17 243 | 1971-01-04 | 3 115 |
+
+Abwägung: [ADR 0003](../adr/0003-yahoo-transport.md).
+
+### 9.1 FRED deckelt nicht alle Index-Reihen
+
+Die Zehn-Jahres-Grenze betrifft nur die lizenzierten Indizes:
+
+| Serie | Punkte | ab | |
+|---|---|---|---|
+| `SP500`, `DJIA` | 2 610 | 2016-08-22 | gedeckelt |
+| **`NASDAQCOM`** | 14 491 | **1971-02-05** | frei |
+| **`NASDAQ100`** | 10 602 | **1986-01-02** | frei |
+| **`DCOILWTICO`** | 10 599 | 1986-01-02 | frei |
+| **`DGS3MO`** | 11 733 | 1981-09-01 | frei |
+
+`DGS3MO` schließt eine offene Lücke: Sharpe und Sortino rechneten bis dahin
+mit rf = 0.
+
+### 9.2 Dominance: aufzeichnen statt kaufen
+
+Historische Dominance bleibt frei unerreichbar (§7). Coin Metrics hat im
+Community-Tier auch keine Markt-Aggregate — `catalog-v2/index-levels` und
+`catalog-v2/market-metrics` liefern beide `{"data":[]}`, `timeseries/index-levels`
+antwortet mit HTTP 403.
+
+Gelöst wie bei Liquidationen und Open Interest: der Nachtjob schreibt den
+aktuellen Stand aus `/global` täglich mit. `crypto.btc_dominance`,
+`crypto.eth_dominance` und `crypto.total_marketcap` beginnen deshalb am
+2026-08-24 und wachsen von da an. Rückwirkend wird nichts erfunden.
+
 ## Offene Punkte
 
-1. **Aktien-/Index-Quelle ersetzen (§4.2).** Stooq ist tot. Kandidaten: FRED (`SP500`,
-   `NASDAQ100`, `VIXCLS`, `DTWEXBGS`) — kostenlos und bereits im Stack, aber Aktienserien
-   nur ~10 Jahre und 1 Tag verzögert; oder ein bezahlter Anbieter für tiefe Historie.
+1. ~~Aktien-/Index-Quelle ersetzen (§4.2)~~ — gelöst ohne Abo: S&P 500 ab 1970 über
+   Yahoo (ADR 0003), Nasdaq Composite ab 1971 über FRED. Siehe Abschnitt 9.
 
-2. **Historische Dominance (§6.4).** Nur mit bezahltem CoinGecko-Zugang oder
-   einer anderen lizenzierten Quelle. Siehe Abschnitt 7.
+2. ~~Historische Dominance (§6.4)~~ — frei nicht erhältlich, deshalb wird sie ab
+   2026-08-24 selbst aufgezeichnet. Siehe Abschnitt 9.2.
 3. ~~`FRED_API_KEY` fehlt~~ — gelöst über den CSV-Transport, siehe ADR 0002. Ein
    Key bleibt wünschenswert, weil die dokumentierte API stabiler zugesichert ist.
 4. ~~Docker-Engine nicht gestartet~~ — gelöst: Postgres nativ, Cache über Postgres

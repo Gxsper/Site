@@ -133,20 +133,39 @@ export async function GET(request: Request) {
       case 'riskadjusted': {
         const price = await loadById(query.series);
         const returns = dailyLogReturns(price);
+
+        /**
+         * Der risikofreie Zins (§6.7). Fällt seine Quelle aus, wird mit 0
+         * gerechnet — aber der Hinweis sagt dann auch, dass das passiert ist.
+         * Ein stillschweigendes rf = 0 würde das Sharpe-Ratio zu gut aussehen
+         * lassen, ohne dass jemand es merkt.
+         */
+        let riskFree: SeriesPoint[] = [];
+        let riskFreeNote =
+          'Risikofreier Zins: US 3M Treasury (FRED DGS3MO), tagesgenau abgezogen.';
+        try {
+          riskFree = await loadById('fred.DGS3MO');
+        } catch (error) {
+          riskFreeNote =
+            'Achtung: mit rf = 0 gerechnet, weil DGS3MO nicht abrufbar war — ' +
+            `${error instanceof Error ? error.message : String(error)}. ` +
+            'Sharpe und Sortino fallen dadurch zu günstig aus.';
+        }
+
+        const options = riskFree.length > 0 ? { riskFreeAnnualPct: riskFree } : {};
+
         return NextResponse.json({
           metric: 'riskadjusted',
           series: query.series,
           window: query.window,
-          sharpe: rollingSharpe(returns, query.window),
-          sortino: rollingSortino(returns, query.window),
+          sharpe: rollingSharpe(returns, query.window, options),
+          sortino: rollingSortino(returns, query.window, options),
           volatility: rollingVolatility(returns, query.window),
           methodology: {
             sharpe: RISK_METHODOLOGY.sharpe,
             sortino: RISK_METHODOLOGY.sortino,
             volatility: RISK_METHODOLOGY.volatility,
-            hinweis:
-              'Ohne risikofreien Zins gerechnet (rf = 0). Sobald DGS3MO im ' +
-              'Katalog steht, fließt er ein.',
+            hinweis: riskFreeNote,
           },
         });
       }

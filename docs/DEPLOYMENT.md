@@ -158,9 +158,11 @@ Sie stehen alle auch im UI, damit niemand sie für Messungen hält:
 
 | Thema | Grenze |
 |---|---|
-| Aktienhistorie | FRED `SP500` reicht nur ~10 Jahre zurück; Stooq ist durch eine Bot-Prüfung nicht mehr nutzbar |
-| Dominance | Historische BTC.D nur mit bezahltem CoinGecko-Zugang |
+| Aktienhistorie | Gelöst ohne Abo: S&P 500 ab 1970 über Yahoo (ADR 0003), Nasdaq ab 1971 über FRED. Yahoo ist ein inoffizieller Endpunkt — für ein öffentliches Produkt zu ersetzen |
+| Dominance | Historisch nicht frei erhältlich; wird ab 2026-08-24 selbst aufgezeichnet und wächst von da an |
+| Dollar-Index | `dxy.close` ab 1971 hat auf 18 % der Tage keinen Kurs; `fred.DTWEXBGS` ab 2006 ist sauberer |
 | Open Interest | Binance liefert 31 Tage; längere Historie entsteht nur durch eigenes Mitschreiben |
 | Liquidationen | Beginnen mit dem ersten Worker-Start, keine Rekonstruktion |
-| Liquidations-Heatmap | Bewusst nicht gebaut — wäre ein Modell, keine Messung (§4.4) |
+| Liquidations-Cluster | Zeigt eingetretene Liquidationen, keine erwarteten Level. Aussagekräftig erst nach einigen Tagen Ingest |
+| Sharpe / Sortino | Rechnen mit `fred.DGS3MO` als risikofreiem Zins; fällt der aus, steht rf = 0 im Methodik-Hinweis |
 | Puell Multiple | Miner-Revenue ist angenähert, weil Coin Metrics `RevUSD` sperrt |

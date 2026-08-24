@@ -45,6 +45,7 @@ export type ProviderId =
   | 'coingecko'
   | 'stooq'
   | 'coinglass'
+  | 'yahoo'
   | 'alternativeme'
   | 'mempool'
   | 'derived';

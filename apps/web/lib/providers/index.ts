@@ -8,16 +8,20 @@
 
 import { alternativeMeProvider } from '@/lib/providers/alternativeme';
 import { binanceProvider } from '@/lib/providers/binance';
+import { coinGeckoProvider } from '@/lib/providers/coingecko';
 import { coinMetricsProvider } from '@/lib/providers/coinmetrics';
 import { derivedProvider } from '@/lib/providers/derived';
 import { fredProvider } from '@/lib/providers/fred';
+import { yahooProvider } from '@/lib/providers/yahoo';
 import { ProviderError, type Provider, type ProviderId } from '@/lib/series/types';
 
 const REGISTRY: Partial<Record<ProviderId, Provider>> = {
   binance: binanceProvider,
   coinmetrics: coinMetricsProvider,
+  coingecko: coinGeckoProvider,
   alternativeme: alternativeMeProvider,
   fred: fredProvider,
+  yahoo: yahooProvider,
   derived: derivedProvider,
 };
 

@@ -16,6 +16,8 @@ const ATTRIBUTION_BINANCE = 'Marktdaten: Binance';
 const ATTRIBUTION_COINMETRICS = 'Daten: Coin Metrics Community API';
 const ATTRIBUTION_ALTERNATIVEME = 'Fear & Greed Index: alternative.me';
 const ATTRIBUTION_FRED = 'Makrodaten: Federal Reserve Bank of St. Louis (FRED)';
+const ATTRIBUTION_YAHOO = 'Kurse: Yahoo Finance';
+const ATTRIBUTION_COINGECKO = 'Marktüberblick: CoinGecko';
 
 /** Eine Stunde. Tagesserien werden häufiger geprüft als sie sich ändern, damit
  *  der letzte Tageswert zeitnah ankommt; der Cache fängt das ab (§10). */
@@ -258,6 +260,144 @@ export const CATALOG: readonly SeriesDescriptor[] = [
     attribution: ATTRIBUTION_FRED,
   },
 
+  // ------------------------------------------- Aktien, Rohstoffe, Devisen
+  // Stooq ist durch eine Bot-Pruefung tot, FRED liefert SP500 und DJIA aus
+  // Lizenzgruenden nur zehn Jahre rollierend. Yahoo hat dieselben Reihen frei
+  // und tief — Abwaegung in docs/adr/0003-yahoo-transport.md.
+  {
+    id: 'spx.close',
+    label: 'S&P 500',
+    group: 'equities',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'yahoo',
+    providerParams: { symbol: '^GSPC' },
+    // Verifiziert: 14 282 Tage ab 1970-01-02, keine Luecken
+    earliest: '1970-01-02T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_YAHOO,
+  },
+  {
+    id: 'ndx.close',
+    label: 'Nasdaq 100',
+    group: 'equities',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'yahoo',
+    providerParams: { symbol: '^NDX' },
+    // Verifiziert: 10 303 Tage ab 1985-10-01
+    earliest: '1985-10-01T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_YAHOO,
+  },
+  {
+    id: 'dji.close',
+    label: 'Dow Jones',
+    group: 'equities',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'yahoo',
+    providerParams: { symbol: '^DJI' },
+    // Verifiziert: 8722 Tage ab 1992-01-02
+    earliest: '1992-01-02T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_YAHOO,
+  },
+  {
+    id: 'gold.usd',
+    label: 'Gold (Future, USD)',
+    group: 'equities',
+    unit: 'usd',
+    nativeFrequency: '1d',
+    provider: 'yahoo',
+    providerParams: { symbol: 'GC=F' },
+    // Verifiziert: 6603 Tage ab 2000-08-30, 84 Tage ohne Schlusskurs
+    earliest: '2000-08-30T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_YAHOO,
+  },
+  {
+    id: 'silver.usd',
+    label: 'Silber (Future, USD)',
+    group: 'equities',
+    unit: 'usd',
+    nativeFrequency: '1d',
+    provider: 'yahoo',
+    providerParams: { symbol: 'SI=F' },
+    earliest: '2000-08-30T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_YAHOO,
+  },
+  {
+    /**
+     * ⚠️ 3115 der 17 243 Tage haben keinen Schlusskurs — knapp 18 Prozent.
+     * Fuer die Zeit ab 2006 ist fred.DTWEXBGS die sauberere Reihe; diese hier
+     * ist die einzige mit Historie bis 1971.
+     */
+    id: 'dxy.close',
+    label: 'Dollar-Index DXY (ab 1971, mit Luecken)',
+    group: 'fx',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'yahoo',
+    providerParams: { symbol: 'DX-Y.NYB' },
+    earliest: '1971-01-04T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_YAHOO,
+  },
+  {
+    id: 'fred.NASDAQCOM',
+    label: 'Nasdaq Composite (ab 1971)',
+    group: 'equities',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'NASDAQCOM', scale: 1 },
+    // Verifiziert: 14 491 Tage ab 1971-02-05 — anders als SP500 nicht gedeckelt
+    earliest: '1971-02-05T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.DCOILWTICO',
+    label: 'Rohoel WTI',
+    group: 'equities',
+    unit: 'usd',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'DCOILWTICO', scale: 1 },
+    // Verifiziert: 10 599 Tage ab 1986-01-02
+    earliest: '1986-01-02T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    /**
+     * Der risikofreie Zins fuer Sharpe und Sortino (§6.7). Bisher wurde dort
+     * mit 0 gerechnet, weil die Reihe fehlte.
+     */
+    id: 'fred.DGS3MO',
+    label: 'US 3M Treasury (risikofreier Zins)',
+    group: 'rates',
+    unit: 'pct',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'DGS3MO', scale: 1 },
+    // Verifiziert: 11 733 Tage ab 1981-09-01
+    earliest: '1981-09-01T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+
   // ------------------------------------------------------- Aktien / Volatilität
   {
     id: 'fred.VIXCLS',
@@ -370,6 +510,61 @@ export const CATALOG: readonly SeriesDescriptor[] = [
     supportsLog: false,
     updateCadence: HOURLY,
     attribution: ATTRIBUTION_BINANCE,
+  },
+
+  // ------------------------------------------------------------- Dominance
+  /**
+   * ⚠️ **Wird ab jetzt selbst aufgezeichnet — es gibt keine Historie davor.**
+   *
+   * Eine historische Dominance ist frei nicht zu bekommen (FINDINGS.md §7):
+   * CoinGeckos `/global/market_cap_chart` verlangt ein PRO-Abo, Kursverläufe
+   * reichen 365 Tage zurück, und Coin Metrics hat im Community-Tier keine
+   * Markt-Aggregate.
+   *
+   * Also dasselbe Vorgehen wie bei Liquidationen und Open Interest: der
+   * Nachtjob schreibt den aktuellen Stand täglich mit. Die Reihe beginnt beim
+   * ersten Lauf und wächst von da an — sie wird nicht rückwirkend erfunden.
+   *
+   * `earliest` steht auf dem Tag, an dem die Aufzeichnung eingebaut wurde.
+   */
+  {
+    id: 'crypto.btc_dominance',
+    label: 'BTC-Dominanz (ab eigener Aufzeichnung)',
+    group: 'crypto',
+    unit: 'pct',
+    nativeFrequency: '1d',
+    provider: 'coingecko',
+    providerParams: { field: 'btc' },
+    earliest: '2026-08-24T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_COINGECKO,
+  },
+  {
+    id: 'crypto.eth_dominance',
+    label: 'ETH-Dominanz (ab eigener Aufzeichnung)',
+    group: 'crypto',
+    unit: 'pct',
+    nativeFrequency: '1d',
+    provider: 'coingecko',
+    providerParams: { field: 'eth' },
+    earliest: '2026-08-24T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_COINGECKO,
+  },
+  {
+    id: 'crypto.total_marketcap',
+    label: 'Krypto-Gesamtkapitalisierung (ab eigener Aufzeichnung)',
+    group: 'crypto',
+    unit: 'usd',
+    nativeFrequency: '1d',
+    provider: 'coingecko',
+    providerParams: { field: 'total' },
+    earliest: '2026-08-24T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_COINGECKO,
   },
 
   // -------------------------------------------------------------- Sentiment

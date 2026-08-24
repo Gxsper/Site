@@ -276,14 +276,16 @@ describe('Registry', () => {
     expect(listProviders().map((p) => p.id).sort()).toEqual([
       'alternativeme',
       'binance',
+      'coingecko',
       'coinmetrics',
       'derived',
       'fred',
+      'yahoo',
     ]);
   });
 
   it('wirft für einen noch nicht implementierten Provider', () => {
-    // CoinGecko steht in der ProviderId-Union, ist aber noch nicht gebaut.
-    expect(() => getProvider('coingecko')).toThrow(/noch nicht implementiert/);
+    // Bybit steht in der ProviderId-Union, ist aber noch nicht gebaut.
+    expect(() => getProvider('bybit')).toThrow(/noch nicht implementiert/);
   });
 });
