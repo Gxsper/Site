@@ -25,3 +25,6 @@ test-results/
 .idea/
 
 drizzle/meta/_journal.json.lock
+
+# Temporaere Hilfsskripte beim Debuggen (fangen mit einem Punkt an)
+apps/web/.*.mjs
