@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T11:40:27.524Z",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=RRPONTSYD&cosd=2023-12-27&coed=2024-01-05",
+    "docs": "https://fred.stlouisfed.org/series/RRPONTSYD",
+    "httpStatus": 200,
+    "contentType": "application/csv",
+    "note": "Nur Dokumentation der Response-Shape. Nie Laufzeitquelle (PROJECT_SPEC 0.3). Transportwahl: docs/adr/0002-fred-transport.md"
+  },
+  "response": {
+    "_raw": "observation_date,RRPONTSYD\n2023-12-27,818.869\n2023-12-28,829.573\n2023-12-29,1018.483\n2024-01-01,\n2024-01-02,704.864\n2024-01-03,719.897\n2024-01-04,664.899\n2024-01-05,694.478\n"
+  }
+}

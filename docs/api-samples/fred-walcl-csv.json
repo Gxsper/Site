@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "fetchedAt": "2026-08-24T11:40:27.126Z",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=WALCL&cosd=2023-12-27&coed=2024-01-10",
+    "docs": "https://fred.stlouisfed.org/series/WALCL",
+    "httpStatus": 200,
+    "contentType": "application/csv",
+    "note": "Nur Dokumentation der Response-Shape. Nie Laufzeitquelle (PROJECT_SPEC 0.3). Transportwahl: docs/adr/0002-fred-transport.md"
+  },
+  "response": {
+    "_raw": "observation_date,WALCL\n2023-12-27,7712781\n2024-01-03,7681024\n2024-01-10,7686710\n"
+  }
+}

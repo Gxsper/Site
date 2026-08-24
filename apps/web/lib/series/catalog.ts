@@ -6,8 +6,8 @@
  * Eine Serie, deren Historienbeginn nicht verifiziert ist, gehört nicht hierher
  * — geraten wäre sie eine Behauptung über Daten, die wir nicht haben (§0.3).
  *
- * Der Katalog wächst mit den Phasen. Aktuell nur schlüssellose Provider;
- * FRED kommt, sobald ein API-Key vorliegt.
+ * Der Katalog wächst mit den Phasen. Alle aktuellen Quellen kommen ohne
+ * API-Key aus, FRED über den CSV-Transport (docs/adr/0002-fred-transport.md).
  */
 
 import type { SeriesDescriptor } from '@/lib/series/types';
@@ -15,6 +15,7 @@ import type { SeriesDescriptor } from '@/lib/series/types';
 const ATTRIBUTION_BINANCE = 'Marktdaten: Binance';
 const ATTRIBUTION_COINMETRICS = 'Daten: Coin Metrics Community API';
 const ATTRIBUTION_ALTERNATIVEME = 'Fear & Greed Index: alternative.me';
+const ATTRIBUTION_FRED = 'Makrodaten: Federal Reserve Bank of St. Louis (FRED)';
 
 /** Eine Stunde. Tagesserien werden häufiger geprüft als sie sich ändern, damit
  *  der letzte Tageswert zeitnah ankommt; der Cache fängt das ab (§10). */
@@ -129,6 +130,157 @@ export const CATALOG: readonly SeriesDescriptor[] = [
     supportsLog: true,
     updateCadence: SIX_HOURS,
     attribution: ATTRIBUTION_COINMETRICS,
+  },
+
+  // ------------------------------------------------------------------ Makro
+  // Einheiten am 2026-08-24 direkt bei FRED nachgeschlagen. Die Angaben in
+  // PROJECT_SPEC.md §4.3 sind für WTREGEN und WRESBAL falsch — beide sind in
+  // Millionen, nicht in Milliarden. Siehe docs/api-samples/FINDINGS.md §6.
+  {
+    id: 'fred.WALCL',
+    label: 'Fed Bilanzsumme (WALCL)',
+    group: 'macro',
+    unit: 'usd_bn',
+    nativeFrequency: '1w',
+    provider: 'fred',
+    providerParams: { series_id: 'WALCL', scale: 0.001 },
+    earliest: '2002-12-18T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.WTREGEN',
+    label: 'Treasury General Account (WTREGEN)',
+    group: 'macro',
+    unit: 'usd_bn',
+    nativeFrequency: '1w',
+    provider: 'fred',
+    providerParams: { series_id: 'WTREGEN', scale: 0.001 },
+    earliest: '2002-12-18T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.RRPONTSYD',
+    label: 'Overnight Reverse Repo (RRPONTSYD)',
+    group: 'macro',
+    unit: 'usd_bn',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'RRPONTSYD', scale: 1 },
+    earliest: '2003-02-07T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.WM2NS',
+    label: 'US M2 Geldmenge (WM2NS)',
+    group: 'macro',
+    unit: 'usd_bn',
+    nativeFrequency: '1w',
+    provider: 'fred',
+    providerParams: { series_id: 'WM2NS', scale: 1 },
+    earliest: '1981-01-05T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    /**
+     * Das Hauptchart der Macro-Seite (§8). Formel und Einheiten-Behandlung in
+     * lib/metrics/net-liquidity.ts, Methodik im UI-Tooltip.
+     */
+    id: 'macro.net_liquidity',
+    label: 'Fed Net Liquidity',
+    group: 'macro',
+    unit: 'usd_bn',
+    nativeFrequency: '1d',
+    provider: 'derived',
+    providerParams: {},
+    // Erst ab hier existieren alle drei Komponenten — RRPONTSYD ist die jüngste.
+    earliest: '2003-02-07T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+
+  // ------------------------------------------------------------------ Zinsen
+  {
+    id: 'fred.DGS10',
+    label: 'US 10Y Treasury Yield',
+    group: 'rates',
+    unit: 'pct',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'DGS10', scale: 1 },
+    earliest: '1962-01-02T00:00:00Z',
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.T10Y2Y',
+    label: 'Zinskurve 10Y minus 2Y',
+    group: 'rates',
+    unit: 'pct',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'T10Y2Y', scale: 1 },
+    earliest: '1976-06-01T00:00:00Z',
+    // Wird regelmäßig negativ — invertierte Kurve.
+    supportsLog: false,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+
+  // ------------------------------------------------------- Aktien / Volatilität
+  {
+    id: 'fred.VIXCLS',
+    label: 'VIX',
+    group: 'equities',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'VIXCLS', scale: 1 },
+    earliest: '1990-01-02T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    /**
+     * ⚠️ Nur ~10 Jahre Historie — FRED hält für SP500 ein rollierendes Fenster
+     * vor (verifiziert: Beginn 2016-08-22). Für Zyklusvergleiche über mehrere
+     * Halvings zu kurz; §4.2 sieht dafür eine andere Quelle vor, die noch
+     * offen ist. Als Makro-Overlay der letzten Jahre brauchbar.
+     */
+    id: 'fred.SP500',
+    label: 'S&P 500 (FRED, ~10 Jahre)',
+    group: 'equities',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'SP500', scale: 1 },
+    earliest: '2016-08-22T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
+  },
+  {
+    id: 'fred.DTWEXBGS',
+    label: 'US-Dollar-Index breit (DTWEXBGS)',
+    group: 'fx',
+    unit: 'index',
+    nativeFrequency: '1d',
+    provider: 'fred',
+    providerParams: { series_id: 'DTWEXBGS', scale: 1 },
+    earliest: '2006-01-02T00:00:00Z',
+    supportsLog: true,
+    updateCadence: SIX_HOURS,
+    attribution: ATTRIBUTION_FRED,
   },
 
   // -------------------------------------------------------------- Sentiment

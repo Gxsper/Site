@@ -125,11 +125,92 @@ offene Punkte unten.
 
 ---
 
+## 6. FRED ✅ nutzbar — aber die Spec irrt gleich dreifach
+
+### 6.1 Kein schlüsselloses Kontingent
+
+§4.3 behauptet „Ohne Key 30 req/min". Tatsächlich:
+
+```
+GET https://api.stlouisfed.org/fred/series/observations?series_id=WALCL&file_type=json
+→ HTTP 400  "Bad Request.  Variable api_key is not set."
+```
+
+Der Key ist Pflicht. Ausweg ist der CSV-Endpunkt, siehe
+[ADR 0002](../adr/0002-fred-transport.md):
+
+```
+GET https://fred.stlouisfed.org/graph/fredgraph.csv?id=WALCL&cosd=…&coed=…
+observation_date,WALCL
+2024-01-03,7681024
+```
+
+- Fehlende Werte sind ein **leeres Feld**, nicht `"."` wie in der JSON-API.
+- Mehrere IDs in einem Aufruf liefern ein **ZIP-Archiv**, kein CSV → eine Serie pro Anfrage.
+
+### 6.2 ⚠️ Die Einheiten-Tabelle in §4.3 ist falsch
+
+§4.3 warnt vor dem „häufigsten Fehler im Netz" und macht ihn selbst. Am
+2026-08-24 direkt von den FRED-Serienseiten abgelesen:
+
+| Serie | §4.3 sagt | **Tatsächlich** | |
+|---|---|---|---|
+| `WALCL` | Millionen | Millions of U.S. Dollars | ✅ korrekt |
+| `WTREGEN` | **Milliarden** | **Millions of U.S. Dollars** | ❌ falsch |
+| `WRESBAL` | **Milliarden** | **Millions of U.S. Dollars** | ❌ falsch |
+| `RRPONTSYD` | Milliarden | Billions of US Dollars | ✅ korrekt |
+| `WM2NS` | Milliarden | Billions of Dollars | ✅ korrekt |
+| `M2SL` | Milliarden | Billions of Dollars | ✅ korrekt |
+
+Die Formel aus §4.3 lautet:
+
+```ts
+const netLiquidityBn = (WALCL / 1000) - WTREGEN - RRPONTSYD;   // FALSCH
+```
+
+Richtig ist:
+
+```ts
+const netLiquidityBn = (WALCL / 1000) - (WTREGEN / 1000) - RRPONTSYD;
+```
+
+Nachgerechnet für **2024-01-03**:
+
+| | Rohwert | in Mrd. |
+|---|---|---|
+| WALCL | 7 681 024 | 7 681,024 |
+| WTREGEN | 758 448 | 758,448 |
+| RRPONTSYD | 719,897 | 719,897 |
+| **Net Liquidity** | | **6 202,679** |
+
+Mit der Spec-Formel käme **−751 485** heraus — ein Faktor-1000-Fehler, der im
+Chart sofort auffiele, in einer Korrelationsrechnung aber nicht unbedingt.
+Der Wert 6 202,679 ist als Referenz in `lib/metrics/net-liquidity.test.ts`
+hinterlegt und wird end-to-end gegen die laufende API geprüft.
+
+### 6.3 Verifizierte Historienbeginne
+
+| Serie | ab | n | Einheit |
+|---|---|---|---|
+| `WALCL`, `WTREGEN` | 2002-12-18 | 1236 | Mio. USD, wöchentlich (Mi) |
+| `RRPONTSYD` | 2003-02-07 | 6141 | Mrd. USD, täglich |
+| `WM2NS` | 1981-01-05 | 2375 | Mrd. USD, wöchentlich |
+| `DGS10` | 1962-01-02 | 16863 | Prozent, täglich |
+| `T10Y2Y` | 1976-06-01 | 13104 | Prozentpunkte, täglich |
+| `VIXCLS` | 1990-01-02 | 9558 | Index, täglich |
+| `NFCI` | 1971-01-08 | 2902 | Index, wöchentlich |
+| `DTWEXBGS` | 2006-01-02 | 5380 | Index Jan 2006=100 |
+| **`SP500`** | **2016-08-22** | 2610 | Index — nur ~10 Jahre, wie §4.2 warnt |
+
+`BAMLH0A0HYM2` (High-Yield OAS) liefert über CSV nur 795 Punkte ab 2023-08-22.
+Die Ursache ist ungeklärt, deshalb steht die Serie noch nicht im Katalog.
+
 ## Offene Punkte
 
 1. **Aktien-/Index-Quelle ersetzen (§4.2).** Stooq ist tot. Kandidaten: FRED (`SP500`,
    `NASDAQ100`, `VIXCLS`, `DTWEXBGS`) — kostenlos und bereits im Stack, aber Aktienserien
    nur ~10 Jahre und 1 Tag verzögert; oder ein bezahlter Anbieter für tiefe Historie.
-2. **`FRED_API_KEY`** fehlt weiterhin — die gesamte Makro-Schicht ist blockiert.
-3. **Docker-Engine** nicht gestartet — Postgres/Redis und damit Cache-Layer 1 und 2
-   sind nicht testbar.
+2. ~~`FRED_API_KEY` fehlt~~ — gelöst über den CSV-Transport, siehe ADR 0002. Ein
+   Key bleibt wünschenswert, weil die dokumentierte API stabiler zugesichert ist.
+3. ~~Docker-Engine nicht gestartet~~ — gelöst: Postgres nativ, Cache über Postgres
+   statt Redis, siehe ADR 0001.

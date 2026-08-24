@@ -277,10 +277,13 @@ describe('Registry', () => {
       'alternativeme',
       'binance',
       'coinmetrics',
+      'derived',
+      'fred',
     ]);
   });
 
   it('wirft für einen noch nicht implementierten Provider', () => {
-    expect(() => getProvider('fred')).toThrow(/noch nicht implementiert/);
+    // CoinGecko steht in der ProviderId-Union, ist aber noch nicht gebaut.
+    expect(() => getProvider('coingecko')).toThrow(/noch nicht implementiert/);
   });
 });

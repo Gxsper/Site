@@ -9,12 +9,16 @@
 import { alternativeMeProvider } from '@/lib/providers/alternativeme';
 import { binanceProvider } from '@/lib/providers/binance';
 import { coinMetricsProvider } from '@/lib/providers/coinmetrics';
+import { derivedProvider } from '@/lib/providers/derived';
+import { fredProvider } from '@/lib/providers/fred';
 import { ProviderError, type Provider, type ProviderId } from '@/lib/series/types';
 
 const REGISTRY: Partial<Record<ProviderId, Provider>> = {
   binance: binanceProvider,
   coinmetrics: coinMetricsProvider,
   alternativeme: alternativeMeProvider,
+  fred: fredProvider,
+  derived: derivedProvider,
 };
 
 /** Alle Provider, die bereits implementiert sind. */
