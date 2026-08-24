@@ -154,6 +154,17 @@ Kostenlose Anbieter mit ausreichender Stufe: Neon, Supabase.
 
    Das legt das Schema an und füllt alle Serien. Ein Datenbank-Dump ist nicht
    nötig — die Historie kommt ohnehin frisch von den Quellen.
+
+   Zum `sslmode` in der Zeichenkette: `pg` behandelt `require` derzeit wie
+   `verify-full`, warnt aber, dass das in `pg` 9 auf die schwächere
+   libpq-Bedeutung wechselt. Deshalb gleich **`sslmode=verify-full`** eintragen —
+   Neons Zertifikat ist öffentlich vertrauenswürdig, es funktioniert unverändert
+   und überlebt den Versionswechsel.
+
+   Die kostenlose Neon-Stufe pausiert eine ungenutzte Datenbank nach wenigen
+   Minuten. Der erste Aufruf danach dauert etwa eine halbe Sekunde länger; der
+   Verbindungs-Timeout steht auf 10 s und fängt das ab.
+
 4. In Netlify das Repository verbinden. `netlify.toml` im Wurzelverzeichnis
    liefert Build-Befehl, Ausgabeverzeichnis und den Next.js-Runtime bereits mit.
 5. Unter *Site configuration → Environment variables* setzen:
