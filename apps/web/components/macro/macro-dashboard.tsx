@@ -134,6 +134,9 @@ export function MacroDashboard() {
           <Link href="/risk" className="hover:underline">
             Risk
           </Link>
+          <Link href="/derivatives" className="hover:underline">
+            Derivate
+          </Link>
         </nav>
       </header>
 

@@ -265,6 +265,72 @@ Messung. Sie wurde deshalb **nicht** gebaut (§11).
 Für BTC.D über mehrere Halvings wäre ein bezahlter Zugang nötig — dieselbe
 Entscheidung, die schon beim Stooq-Ersatz aussteht.
 
+## 8. Derivate ohne Coinglass — Streams und REST (§4.4)
+
+Kein Coinglass-Abo vorhanden, also Eigen-Ingest. Am 2026-08-24 durch echtes
+Verbinden geprüft, nicht aus der Doku übernommen.
+
+### 8.1 ⚠️ Bybit und OKX trennen ohne Heartbeat
+
+Ein erster Test über vier Minuten ohne anwendungsseitigen Ping:
+
+| Börse | Ergebnis |
+|---|---|
+| Binance `!forceOrder@arr` | Verbindung hielt, Server sendet selbst Ping-Frames |
+| Bybit `allLiquidation` | **Close-Code 1006** nach wenigen Minuten |
+| OKX `liquidation-orders` | **Close-Code 4004** |
+
+Ohne Heartbeat läuft ein Worker in einer Reconnect-Schleife und verliert dabei
+laufend Ereignisse. Eingebaut: Bybit `{"op":"ping"}` alle 18 s, OKX der reine
+Text `ping` alle 25 s (kein JSON). Mit Heartbeat lief der Ingest stabil ohne
+eine einzige Trennung.
+
+### 8.2 Verifizierte Shapes
+
+**OKX** — wörtlich vom Live-Stream:
+
+```jsonc
+{ "arg": { "channel": "liquidation-orders", "instType": "SWAP" },
+  "data": [ { "instId": "AAVE-USDT-SWAP", "instFamily": "AAVE-USDT",
+              "details": [ { "bkLoss": "0", "bkPx": "137", "posSide": "short",
+                             "side": "buy", "sz": "1.1", "ts": "1787587871263" } ] } ] }
+```
+
+`posSide` nennt die Seite der **liquidierten Position** direkt. `side` ist die
+Gegenorder — eine Short wird durch Kauf geschlossen.
+
+**Binance** kehrt dagegen um: `o.S = 'SELL'` bedeutet eine liquidierte **Long**.
+Diese Umkehrung ist die häufigste Fehlerquelle bei Liquidationsdaten und in
+`worker/src/streams.ts` mit Test abgesichert.
+
+**Bybit** `allLiquidation` meldet in `S` bereits die Positionsseite — anders als
+das ältere `liquidation`-Topic, wo es die Orderseite war. Keine Umkehrung.
+
+### 8.3 REST-Endpunkte
+
+| Endpunkt | Reichweite |
+|---|---|
+| `futures/data/openInterestHist` | **nur 31 Tage**, auch mit `limit=500` |
+| `futures/data/globalLongShortAccountRatio` | **nur 31 Tage** |
+| `fapi/v1/fundingRate` | volle Historie ab **2019-09-10T08:00:00Z** |
+| `fapi/v1/openInterest` | aktueller Stand |
+| Bybit `v5/market/open-interest` | Umschlag `{retCode, result:{list}}`, Zeitstempel als String |
+
+⚠️ Beim Funding-Endpunkt liefert `startTime=0` **nicht** den Anfang, sondern den
+jüngsten Eintrag. Ein echtes Datum muss gesetzt werden — mit `startTime` für
+2019-01-01 kommt korrekt der 2019-09-10 zurück.
+
+Längere OI-Historie entsteht nur dadurch, dass wir sie ab jetzt selbst
+mitschreiben. Das steht so im Katalog und im UI.
+
+### 8.4 Heatmap: bewusst nicht gebaut
+
+§4.4 verlangt Ehrlichkeit: eine Heatmap erwarteter Liquidationslevel ist ein
+Modell aus Open Interest und angenommener Leverage-Verteilung, keine Messung.
+Statt sie mit einem Hinweis zu versehen, zeigt die Derivate-Seite die
+tatsächlich eingetretenen Liquidationen und erklärt an ihrer Stelle, warum
+dort nichts steht.
+
 ## Offene Punkte
 
 1. **Aktien-/Index-Quelle ersetzen (§4.2).** Stooq ist tot. Kandidaten: FRED (`SP500`,

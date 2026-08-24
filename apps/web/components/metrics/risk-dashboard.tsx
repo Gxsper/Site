@@ -148,6 +148,9 @@ export function RiskDashboard() {
           <Link href="/macro" className="hover:underline">
             Makro
           </Link>
+          <Link href="/derivatives" className="hover:underline">
+            Derivate
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-1 text-[11px]">

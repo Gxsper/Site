@@ -305,6 +305,73 @@ export const CATALOG: readonly SeriesDescriptor[] = [
     attribution: ATTRIBUTION_FRED,
   },
 
+  // --------------------------------------------------------------- Derivate
+  // Eigen-Ingest statt Coinglass (kein Abo) — §4.4. Funding hat volle Historie,
+  // Open Interest reicht bei Binance nur 31 Tage zurueck (verifiziert). Laengere
+  // OI-Historie entsteht dadurch, dass wir sie selbst mitschreiben.
+  {
+    id: 'deriv.btc.funding',
+    label: 'BTC Funding Rate (Binance Perp)',
+    group: 'derivatives',
+    unit: 'pct',
+    nativeFrequency: '4h',
+    provider: 'binance',
+    providerParams: { symbol: 'BTCUSDT', kind: 'funding' },
+    // Verifiziert: erster Funding-Eintrag BTCUSDT am 2019-09-10T08:00:00Z.
+    // Achtung: startTime=0 liefert nicht den Anfang, sondern den juengsten
+    // Eintrag — ein echtes Datum muss gesetzt werden.
+    earliest: '2019-09-10T00:00:00Z',
+    supportsLog: false,
+    updateCadence: HOURLY,
+    attribution: ATTRIBUTION_BINANCE,
+  },
+  {
+    /**
+     * ⚠️ Binance liefert nur ein rollierendes Fenster von 31 Tagen (verifiziert,
+     * auch mit limit=500). Was davor liegt, ist nicht mehr zu bekommen — die
+     * Historie waechst nur dadurch, dass wir sie ab jetzt selbst mitschreiben.
+     * `earliest` steht auf dem Start des Perp-Marktes, damit die Serie richtig
+     * eingeordnet ist; für die Zeit davor bleibt sie leer statt aufgefüllt.
+     */
+    id: 'deriv.btc.oi',
+    label: 'BTC Open Interest (Kontrakte, nur 31 Tage ab API)',
+    group: 'derivatives',
+    unit: 'count',
+    nativeFrequency: '1d',
+    provider: 'binance',
+    providerParams: { symbol: 'BTCUSDT', kind: 'open_interest' },
+    earliest: '2019-09-10T00:00:00Z',
+    supportsLog: true,
+    updateCadence: HOURLY,
+    attribution: ATTRIBUTION_BINANCE,
+  },
+  {
+    id: 'deriv.btc.oi_usd',
+    label: 'BTC Open Interest (USD, nur 31 Tage ab API)',
+    group: 'derivatives',
+    unit: 'usd',
+    nativeFrequency: '1d',
+    provider: 'binance',
+    providerParams: { symbol: 'BTCUSDT', kind: 'open_interest_value' },
+    earliest: '2019-09-10T00:00:00Z',
+    supportsLog: true,
+    updateCadence: HOURLY,
+    attribution: ATTRIBUTION_BINANCE,
+  },
+  {
+    id: 'deriv.btc.long_short',
+    label: 'BTC Long/Short-Verhältnis (nur 31 Tage ab API)',
+    group: 'derivatives',
+    unit: 'ratio',
+    nativeFrequency: '1d',
+    provider: 'binance',
+    providerParams: { symbol: 'BTCUSDT', kind: 'long_short_ratio' },
+    earliest: '2019-09-10T00:00:00Z',
+    supportsLog: false,
+    updateCadence: HOURLY,
+    attribution: ATTRIBUTION_BINANCE,
+  },
+
   // -------------------------------------------------------------- Sentiment
   {
     id: 'sentiment.fng',

@@ -128,13 +128,25 @@ async function fetchKlines(
   return clampToRange(points, range);
 }
 
+/**
+ * Spot und Futures teilen sich die ProviderId `binance`. Statt dafür einen
+ * zweiten Enum-Wert samt Datenbank-Migration einzuführen, entscheidet
+ * `providerParams.kind`: ist es gesetzt, geht die Anfrage an die
+ * Futures-Endpunkte (Open Interest, Funding, Long/Short), sonst an die Klines.
+ */
 export const binanceProvider: Provider = {
   id: PROVIDER,
   catalog: async () => {
     const { CATALOG } = await import('@/lib/series/catalog');
     return CATALOG.filter((d) => d.provider === PROVIDER);
   },
-  fetch: fetchKlines,
+  fetch: async (descriptor, range) => {
+    if ('kind' in descriptor.providerParams) {
+      const { binanceFuturesProvider } = await import('@/lib/providers/binance-futures');
+      return binanceFuturesProvider.fetch(descriptor, range);
+    }
+    return fetchKlines(descriptor, range);
+  },
 };
 
 /** Nur fuer Tests: die reine Umformung ohne Netzwerkzugriff. */

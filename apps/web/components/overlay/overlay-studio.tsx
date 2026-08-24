@@ -171,6 +171,9 @@ export function OverlayStudio() {
           <Link href="/risk" className="hover:underline">
             Risk
           </Link>
+          <Link href="/derivatives" className="hover:underline">
+            Derivate
+          </Link>
         </nav>
 
         <div className="ml-auto flex flex-wrap items-center gap-3">

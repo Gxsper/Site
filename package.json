@@ -26,6 +26,7 @@
     "db:push": "npm run db:push --workspace apps/web",
     "db:studio": "npm run db:studio --workspace apps/web",
     "backfill": "npm run backfill --workspace apps/web --",
+    "worker": "npm run worker --workspace worker",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v"
