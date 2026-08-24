@@ -33,6 +33,7 @@ import {
   rollingVolatility,
 } from '@/lib/metrics/risk-adjusted';
 import { riskMetric } from '@/lib/metrics/risk-metric';
+import { installTelemetrySink } from '@/lib/db/telemetry-sink';
 import { findDescriptor } from '@/lib/series/catalog';
 import { loadSeries } from '@/lib/series/service';
 import type { SeriesDescriptor, SeriesPoint } from '@/lib/series/types';
@@ -64,6 +65,8 @@ async function loadById(id: string): Promise<SeriesPoint[]> {
 }
 
 export async function GET(request: Request) {
+  installTelemetrySink();
+
   const params = new URL(request.url).searchParams;
   const parsed = querySchema.safeParse({
     metric: params.get('metric') ?? undefined,

@@ -20,6 +20,7 @@ import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { getDb } from '@/lib/db';
+import { installTelemetrySink } from '@/lib/db/telemetry-sink';
 import * as schema from '@/lib/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -33,6 +34,8 @@ const querySchema = z.object({
 });
 
 export async function GET(request: Request) {
+  installTelemetrySink();
+
   const params = new URL(request.url).searchParams;
   const parsed = querySchema.safeParse({
     symbol: params.get('symbol') ?? undefined,

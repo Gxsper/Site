@@ -104,10 +104,15 @@ Ein Feature ist erst fertig, wenn **alle** Punkte abgehakt sind:
 | `npm test` | Vitest über alle Workspaces |
 | `npm run typecheck` | `tsc --noEmit`, strict |
 | `npm run check:no-mock` | §11-Enforcement, muss vor jedem Commit grün sein |
-| `npm run docker:up` | Postgres 16 + Redis 7 lokal |
+| `npm run test:e2e` | Playwright-Smoke-Tests |
+| `npm run worker` | Liquidations-Ingest |
+| `npm run nightly` | Nachtjob, Delta je Serie |
+| `npm run docker:up` | Postgres 16 + Redis 7 lokal (Redis optional) |
 | `npm run db:generate` / `db:migrate` | Drizzle-Migrationen |
 
 ## 6. Aktueller Stand
 
-**Phase 0 (Fundament) — implementiert.** Phase 1–7 stehen noch aus.
-Es existieren bewusst noch **keine** Provider, keine `/api/series`-Route und kein UI.
+**Phase 0 bis 7 umgesetzt.** Datenschicht, Overlay-Engine, Chart-UI, Metriken,
+Makro- und Derivate-Seiten sowie Status-Dashboard laufen gegen echte Quellen.
+Bekannte Grenzen der freien Datenquellen: `docs/DEPLOYMENT.md` §8.
+Verifizierte Provider-Eigenheiten: `docs/api-samples/FINDINGS.md`.

@@ -11,12 +11,17 @@
  */
 
 import { loadRootEnv } from '../lib/root-env';
+import { flushTelemetry, installTelemetrySink } from '../lib/db/telemetry-sink';
 import { CATALOG, findDescriptor } from '../lib/series/catalog';
 import { loadSeries } from '../lib/series/service';
 
 // Vor jedem Datenbankzugriff. getEnv() wird erst beim ersten Query ausgewertet,
 // deshalb genügt es, das hier vor dem Aufruf von main() zu erledigen.
 loadRootEnv();
+
+// Ohne den Sink taucht der Lauf spaeter nicht in /api/health auf — und
+// ausgerechnet die Skripte machen die meisten Provider-Anfragen.
+installTelemetrySink();
 
 interface Args {
   series: string[];
@@ -138,6 +143,9 @@ async function main(): Promise<number> {
       failures++;
     }
   }
+
+  // Telemetriepuffer leeren, sonst fehlen die letzten Einträge in /api/health.
+  await flushTelemetry();
 
   if (failures > 0) {
     console.error(`\n${failures} Serie(n) mit Problemen.`);

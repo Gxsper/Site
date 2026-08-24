@@ -27,6 +27,8 @@
     "db:studio": "npm run db:studio --workspace apps/web",
     "backfill": "npm run backfill --workspace apps/web --",
     "worker": "npm run worker --workspace worker",
+    "nightly": "npm run nightly --workspace apps/web",
+    "test:e2e": "npm run test:e2e --workspace apps/web",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v"

@@ -8,6 +8,21 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    # Die Smoke-Tests brauchen eine echte Datenbank — ohne sie melden die
+    # Seiten Fehlerzustaende, und genau das wuerde der Test dann pruefen.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: macro
+          POSTGRES_PASSWORD: macro
+          POSTGRES_DB: macrodeck
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,6 +32,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Schema anlegen
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgres://macro:macro@localhost:5432/macrodeck
 
       # PROJECT_SPEC.md §11: laeuft zuerst und failt den Build bei Treffern.
       - name: check:no-mock
@@ -30,3 +50,11 @@ jobs:
 
       - name: test
         run: npm test
+
+      - name: Playwright installieren
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke-Tests
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: postgres://macro:macro@localhost:5432/macrodeck

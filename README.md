@@ -3,8 +3,9 @@
 Persönliches Analyse-Dashboard für Zyklus- und Bewertungsanalyse mit Makro-Kontext.
 Spezifikation: [PROJECT_SPEC.md](PROJECT_SPEC.md). Arbeitsregeln für Agenten: [CLAUDE.md](CLAUDE.md).
 
-**Stand: Phase 0 (Fundament).** Es gibt noch keine Provider, keine `/api/series`-Route
-und kein UI — das ist so vorgesehen (§13).
+**Stand: Phase 0 bis 7 umgesetzt.** Datenschicht, Overlay-Engine, Charts, Metriken,
+Makro- und Derivate-Seiten laufen gegen echte Quellen. Bekannte Grenzen der
+freien Datenquellen stehen in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) §8.
 
 ## Voraussetzungen
 
@@ -46,22 +47,38 @@ wird ab Phase 1 erzwungen, sobald der erste Provider konstruiert wird.
 | `npm run lint` | ESLint (next/core-web-vitals) |
 | `npm run check:no-mock` | Durchsetzung von §11 — muss immer grün sein |
 | `npm run verify` | check:no-mock + typecheck + test |
+| `npm run test:e2e` | Playwright-Smoke-Tests über alle Seiten |
+| `npm run worker` | Liquidations-Ingest (Binance, Bybit, OKX) |
+| `npm run nightly` | Nachtjob: Delta je Serie nachladen |
+| `npm run backfill -- --all --from 2010-01-01` | einmalige Historie |
 | `npm run docker:up` / `docker:down` / `docker:reset` | lokale Infrastruktur |
 | `npm run db:generate` / `db:migrate` / `db:push` / `db:studio` | Drizzle |
+
+## Seiten
+
+| Pfad | Inhalt |
+|---|---|
+| `/` | Overlay-Studio — Serien überlagern, normalisieren, korrelieren |
+| `/risk` | Risk Metric, Log-Regressionsbänder, Fear & Greed, Drawdown |
+| `/macro` | Net Liquidity, Fed-Bilanz, Zinskurve, Financial Conditions |
+| `/derivatives` | Liquidationen, Open Interest, Funding, Long/Short |
+| `/health` | Zustand aller Quellen und Serien |
+
+Betrieb, Cron-Einrichtung und bekannte Grenzen: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Struktur
 
 ```
 .
 ├─ apps/web              Next.js 15 App Router — UI, API-Routen, Datenschicht
-│  ├─ app/               Routen (Phase 0: nur eine Platzhalterseite)
+│  ├─ app/               Routen und API-Handler
 │  ├─ components/ui/     shadcn/ui
 │  └─ lib/
 │     ├─ db/             Drizzle-Schema + Verbindung
 │     ├─ series/         SeriesDescriptor & Provider-Interface (§3.1, §3.2)
 │     ├─ env.ts          Zod-Validierung der Umgebung (§12)
 │     └─ guard.ts        Laufzeit-Durchsetzung von §11
-├─ worker/               WS-Ingest, ab Phase 6
+├─ worker/               WebSocket-Ingest für Liquidationen
 ├─ scripts/              Repo-Tooling (check-no-mock)
 └─ docs/
    ├─ adr/               Architekturentscheidungen mit Begründung

@@ -12,6 +12,7 @@
 
 import type { z } from 'zod';
 
+import { endpointOf, recordProviderRequest } from '@/lib/providers/telemetry';
 import { ProviderError, type ProviderId } from '@/lib/series/types';
 
 export interface FetchOptions {
@@ -81,14 +82,38 @@ function describeErrorBody(body: string): string {
 /** Ein einzelner Versuch. Wirft bei HTTP-Fehler, gibt sonst den Body zurueck. */
 async function attemptFetch(opts: FetchOptions): Promise<string> {
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const started = Date.now();
 
-  const response = await fetch(opts.url, {
-    headers: { accept: 'application/json', ...opts.headers },
-    signal: AbortSignal.timeout(timeoutMs),
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(opts.url, {
+      headers: { accept: 'application/json', ...opts.headers },
+      signal: AbortSignal.timeout(timeoutMs),
+      cache: 'no-store',
+    });
+  } catch (error) {
+    // Netzwerkabbruch oder Timeout — auch das gehoert in die Statistik (§10).
+    recordProviderRequest({
+      provider: opts.provider,
+      endpoint: endpointOf(opts.url),
+      httpStatus: null,
+      durationMs: Date.now() - started,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 
   const body = await response.text();
+
+  recordProviderRequest({
+    provider: opts.provider,
+    endpoint: endpointOf(opts.url),
+    httpStatus: response.status,
+    durationMs: Date.now() - started,
+    ok: response.ok,
+    error: response.ok ? null : describeErrorBody(body).slice(0, 300),
+  });
 
   if (!response.ok) {
     const error = new ProviderError(

@@ -16,6 +16,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { alignSeries, type AlignMode } from '@/lib/series/align';
+import { installTelemetrySink } from '@/lib/db/telemetry-sink';
 import { findDescriptor } from '@/lib/series/catalog';
 import {
   correlationWarning,
@@ -87,6 +88,8 @@ interface SeriesError {
 }
 
 export async function GET(request: Request) {
+  installTelemetrySink();
+
   const url = new URL(request.url);
   const params = url.searchParams;
 
