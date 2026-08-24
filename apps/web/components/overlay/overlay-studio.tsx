@@ -259,8 +259,18 @@ export function OverlayStudio() {
         </div>
       </header>
 
+      {/*
+        Reihenfolge im Markup: Browser, Chart, Ebenen — das ist die
+        Leseordnung auf großen Schirmen (§9) und die Tab-Reihenfolge.
+
+        Auf dem Telefon stapeln sich die drei Spalten untereinander, und dort
+        wäre der Serien-Browser mit knapp 40 Einträgen das Erste, was man
+        sieht: man müsste an der ganzen Liste vorbeiscrollen, um zum Chart zu
+        kommen. Deshalb zieht `order` das Chart auf kleinen Schirmen nach oben,
+        ohne die Markup-Reihenfolge anzutasten.
+      */}
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)_280px]">
-        <aside className="border-border overflow-hidden border-r p-3 lg:h-[calc(100vh-49px)]">
+        <aside className="border-border order-2 overflow-hidden border-r p-3 lg:order-none lg:h-[calc(100vh-49px)]">
           {catalogQuery.isPending && (
             <p className="text-muted-foreground text-xs">Katalog wird geladen…</p>
           )}
@@ -280,7 +290,7 @@ export function OverlayStudio() {
           )}
         </aside>
 
-        <main className="flex min-w-0 flex-col gap-3 p-3">
+        <main className="order-1 flex min-w-0 flex-col gap-3 p-3 lg:order-none">
           {/* §11: Quelle nicht erreichbar → Banner, andere Serien rendern normal. */}
           {errors.length > 0 && (
             <div className="border-destructive/40 bg-destructive/10 rounded-md border px-3 py-2">
@@ -349,7 +359,7 @@ export function OverlayStudio() {
           )}
         </main>
 
-        <aside className="border-border overflow-y-auto border-l p-3 lg:h-[calc(100vh-49px)]">
+        <aside className="border-border order-3 overflow-y-auto border-l p-3 lg:order-none lg:h-[calc(100vh-49px)]">
           <h2 className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-wider uppercase">
             Ebenen
           </h2>
