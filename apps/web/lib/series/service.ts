@@ -71,11 +71,19 @@ export async function loadSeries(
   await upsertDescriptor(descriptor);
 
   const extent = await readExtent(descriptor.id);
+  const previous = await readSyncState(descriptor.id);
   const head = await cache.get(headCacheKey(descriptor.id));
+
+  const covered =
+    previous?.coveredFromT !== null && previous?.coveredFromT !== undefined &&
+    previous.coveredToT !== null
+      ? { from: previous.coveredFromT, to: previous.coveredToT }
+      : undefined;
 
   const plans = planFetches(range, extent, {
     headIsFresh: head !== null,
     earliestSeconds: Math.floor(Date.parse(descriptor.earliest) / 1000),
+    covered,
   });
 
   let warning: string | undefined;
@@ -84,17 +92,23 @@ export async function loadSeries(
     const provider = getProvider(descriptor.provider);
     try {
       let newest: number | null = extent?.maxT ?? null;
+      let askedFrom = covered?.from ?? Number.POSITIVE_INFINITY;
+      let askedTo = covered?.to ?? Number.NEGATIVE_INFINITY;
 
       for (const plan of plans) {
         await takeTokenOrThrow(descriptor);
         const points = await provider.fetch(descriptor, { from: plan.from, to: plan.to });
         await writePoints(descriptor.id, points);
 
+        // Den angefragten Bereich merken, auch wenn er leer blieb.
+        askedFrom = Math.min(askedFrom, plan.from);
+        askedTo = Math.max(askedTo, plan.to);
+
         const last = points[points.length - 1];
         if (last && (newest === null || last.t > newest)) newest = last.t;
       }
 
-      await recordSuccess(descriptor.id, newest);
+      await recordSuccess(descriptor.id, newest, { from: askedFrom, to: askedTo });
       // Rand als frisch markieren, damit die nächste Anfrage innerhalb der
       // updateCadence nicht erneut beim Provider landet.
       await cache.set(headCacheKey(descriptor.id), { checkedAt: Date.now() }, descriptor.updateCadence);

@@ -126,6 +126,15 @@ export const seriesSyncState = pgTable('series_sync_state', {
     .primaryKey()
     .references(() => series.id, { onDelete: 'cascade' }),
   lastPointT: bigint('last_point_t', { mode: 'number' }),
+  /**
+   * Welchen Zeitraum wir bereits **abgefragt** haben — nicht, welchen wir
+   * bekommen haben. Der Unterschied ist entscheidend: fragt man einen Tag ab,
+   * an dem die Quelle nachweislich nichts hat (Feiertag, Wochenende, Zeit vor
+   * dem ersten Handelstag), bliebe ohne diese Notiz eine Luecke bestehen, die
+   * bei jeder Anfrage erneut geholt wird — dauerhaft und vergeblich.
+   */
+  coveredFromT: bigint('covered_from_t', { mode: 'number' }),
+  coveredToT: bigint('covered_to_t', { mode: 'number' }),
   lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
   lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }),
   lastError: text('last_error'),

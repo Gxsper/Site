@@ -67,11 +67,15 @@ function toFredDate(unixSeconds: number): string {
  * Kopfzeile, Zeilenenden — ohne Netzwerk testbar sind.
  */
 export function parseFredCsv(csv: string, seriesId: string): SeriesPoint[] {
-  const lines = csv.trim().split(/\r?\n/);
-  if (lines.length === 0) {
-    throw new ProviderError(PROVIDER, `${seriesId}: leere Antwort`);
-  }
+  const trimmed = csv.trim();
 
+  // FRED antwortet für ein Fenster ohne Beobachtungen mit HTTP 200 und einem
+  // leeren Body (verifiziert: cosd=coed=2019-01-01 bei SP500 liefert "\n").
+  // Das ist die Aussage "hier existieren nachweislich keine Daten" und damit
+  // ein legitimes leeres Ergebnis (§3.2) — kein Fehler.
+  if (trimmed === '') return [];
+
+  const lines = trimmed.split(/\r?\n/);
   const header = lines[0]!.split(',').map((h) => h.trim());
   if (header[0]?.toLowerCase() !== 'observation_date') {
     throw new ProviderError(

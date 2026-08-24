@@ -25,6 +25,17 @@ export interface PlanOptions {
   headIsFresh: boolean;
   /** Unix-Sekunden des dokumentierten Historienbeginns der Serie. */
   earliestSeconds: number;
+  /**
+   * Bereits **abgefragter** Zeitraum, unabhängig davon, ob dabei Punkte
+   * herauskamen.
+   *
+   * Ohne diese Angabe entsteht eine Endlosschleife: `fred.SP500` hat seinen
+   * ersten Wert am 02.01.2019. Wer ab dem 01.01.2019 anfragt, sieht eine
+   * Ein-Tages-Lücke, holt sie, bekommt nichts — und holt sie beim nächsten Mal
+   * wieder. Ein Feiertag, an dem die Börse zu hat, wird so bei jedem
+   * Seitenaufruf erneut beim Provider angefragt.
+   */
+  covered?: { from: number; to: number } | undefined;
 }
 
 export interface PlannedFetch extends SeriesRange {
@@ -47,24 +58,35 @@ export function planFetches(
 
   if (from > to) return [];
 
-  if (!extent) {
+  if (!extent && !opts.covered) {
     return [{ from, to, reason: 'initial' }];
   }
 
+  // Bereits erledigt ist alles, was entweder Daten geliefert hat **oder**
+  // schon einmal abgefragt wurde.
+  const doneFrom = Math.min(
+    extent?.minT ?? Number.POSITIVE_INFINITY,
+    opts.covered?.from ?? Number.POSITIVE_INFINITY,
+  );
+  const doneTo = Math.max(
+    extent?.maxT ?? Number.NEGATIVE_INFINITY,
+    opts.covered?.to ?? Number.NEGATIVE_INFINITY,
+  );
+
   const planned: PlannedFetch[] = [];
 
-  // Fehlende Historie vor dem gespeicherten Bestand.
-  if (from < extent.minT) {
-    const backfillTo = Math.min(extent.minT - 1, to);
+  // Fehlende Historie vor dem erledigten Bereich.
+  if (from < doneFrom) {
+    const backfillTo = Math.min(doneFrom - 1, to);
     if (from <= backfillTo) {
       planned.push({ from, to: backfillTo, reason: 'backfill' });
     }
   }
 
-  // Neue Punkte nach dem gespeicherten Bestand. Wenn der Rand innerhalb der
+  // Neue Punkte nach dem erledigten Bereich. Wenn der Rand innerhalb der
   // updateCadence bereits geprüft wurde, ist ein erneuter Abruf verschwendet.
-  if (to > extent.maxT && !opts.headIsFresh) {
-    const headFrom = Math.max(extent.maxT + 1, from);
+  if (to > doneTo && !opts.headIsFresh) {
+    const headFrom = Math.max(doneTo + 1, from);
     if (headFrom <= to) {
       planned.push({ from: headFrom, to, reason: 'head' });
     }

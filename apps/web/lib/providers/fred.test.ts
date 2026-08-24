@@ -58,6 +58,18 @@ describe('parseFredCsv', () => {
     expect(parseFredCsv(csv, 'T10Y2Y')[0]!.v).toBe(-0.35);
   });
 
+  it('liest einen leeren Body als "keine Daten im Fenster", nicht als Fehler', () => {
+    // Verifiziert: cosd=coed=2019-01-01 liefert für SP500 HTTP 200 mit "\n".
+    // Neujahr, Börse zu — das ist eine Aussage über die Daten, kein Fehler (§3.2).
+    expect(parseFredCsv('\n', 'SP500')).toEqual([]);
+    expect(parseFredCsv('', 'SP500')).toEqual([]);
+    expect(parseFredCsv('   \r\n  ', 'SP500')).toEqual([]);
+  });
+
+  it('liest eine Antwort mit Kopfzeile, aber ohne Datenzeilen als leer', () => {
+    expect(parseFredCsv('observation_date,SP500\n', 'SP500')).toEqual([]);
+  });
+
   it('wirft bei unerwarteter Kopfzeile, statt still nichts zu liefern', () => {
     expect(() => parseFredCsv('<!DOCTYPE html><html>', 'WALCL')).toThrow(ProviderError);
     expect(() => parseFredCsv('date,WALCL\n2024-01-01,1', 'WALCL')).toThrow(/Kopfzeile/);

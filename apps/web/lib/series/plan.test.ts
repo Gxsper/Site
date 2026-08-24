@@ -79,6 +79,43 @@ describe('planFetches', () => {
     expect(planFetches({ from, to }, null, notFresh)).toEqual([]);
   });
 
+  /**
+   * Regression: fred.SP500 hat seinen ersten Wert am 02.01.2019. Wer ab dem
+   * 01.01.2019 anfragt, sah eine Ein-Tages-Lücke, holte sie, bekam nichts
+   * (Neujahr, Börse zu) — und holte sie beim nächsten Seitenaufruf wieder.
+   * Der abgefragte Bereich muss deshalb getrennt vom Datenbestand zählen.
+   */
+  it('fragt einen bereits erfolglos geprüften Randtag nicht erneut an', () => {
+    const result = planFetches({ from: JAN01, to: JAN20 }, extent(JAN01 + DAY, JAN20), {
+      headIsFresh: true,
+      earliestSeconds,
+      covered: { from: JAN01, to: JAN20 },
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it('holt trotzdem, was ausserhalb des bereits abgefragten Bereichs liegt', () => {
+    const result = planFetches({ from: JAN01, to: JAN20 }, null, {
+      headIsFresh: true,
+      earliestSeconds,
+      covered: { from: JAN10, to: JAN20 },
+    });
+
+    expect(result).toEqual([{ from: JAN01, to: JAN10 - 1, reason: 'backfill' }]);
+  });
+
+  it('behandelt einen leeren Abruf als erledigt, auch ganz ohne Datenbestand', () => {
+    // Kein einziger Punkt vorhanden, aber der Zeitraum wurde bereits geprüft.
+    const result = planFetches({ from: JAN01, to: JAN10 }, null, {
+      headIsFresh: true,
+      earliestSeconds,
+      covered: { from: JAN01, to: JAN10 },
+    });
+
+    expect(result).toEqual([]);
+  });
+
   it('erzeugt keine überlappenden Zeiträume', () => {
     const result = planFetches({ from: JAN01, to: JAN20 }, extent(JAN10, JAN10), notFresh);
 

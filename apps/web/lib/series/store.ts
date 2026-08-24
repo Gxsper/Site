@@ -125,6 +125,9 @@ export interface SyncState {
   lastAttemptAt: Date | null;
   lastError: string | null;
   consecutiveFailures: number;
+  /** Bereits abgefragter Zeitraum — siehe schema.ts und plan.ts. */
+  coveredFromT: number | null;
+  coveredToT: number | null;
 }
 
 export async function readSyncState(seriesId: string): Promise<SyncState | null> {
@@ -143,16 +146,31 @@ export async function readSyncState(seriesId: string): Promise<SyncState | null>
     lastAttemptAt: row.lastAttemptAt,
     lastError: row.lastError,
     consecutiveFailures: row.consecutiveFailures,
+    coveredFromT: row.coveredFromT,
+    coveredToT: row.coveredToT,
   };
 }
 
-export async function recordSuccess(seriesId: string, lastPointT: number | null): Promise<void> {
+/**
+ * Hält einen erfolgreichen Abruf fest und erweitert den abgefragten Zeitraum.
+ *
+ * `covered` ist bewusst der **angefragte** Bereich, nicht der Bereich der
+ * zurückgekommenen Punkte. Nur so weiß der Planer beim nächsten Mal, dass an
+ * einem Feiertag oder vor dem ersten Handelstag nachweislich nichts liegt.
+ */
+export async function recordSuccess(
+  seriesId: string,
+  lastPointT: number | null,
+  covered: { from: number; to: number },
+): Promise<void> {
   const db = getDb();
   await db
     .insert(schema.seriesSyncState)
     .values({
       seriesId,
       lastPointT,
+      coveredFromT: covered.from,
+      coveredToT: covered.to,
       lastSuccessAt: sql`now()` as unknown as Date,
       lastAttemptAt: sql`now()` as unknown as Date,
       lastError: null,
@@ -162,6 +180,9 @@ export async function recordSuccess(seriesId: string, lastPointT: number | null)
       target: schema.seriesSyncState.seriesId,
       set: {
         lastPointT,
+        // Der abgedeckte Bereich wächst nur, er schrumpft nie.
+        coveredFromT: sql`least(coalesce(${schema.seriesSyncState.coveredFromT}, ${covered.from}), ${covered.from})`,
+        coveredToT: sql`greatest(coalesce(${schema.seriesSyncState.coveredToT}, ${covered.to}), ${covered.to})`,
         lastSuccessAt: sql`now()`,
         lastAttemptAt: sql`now()`,
         lastError: null,
