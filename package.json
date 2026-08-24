@@ -1,0 +1,36 @@
+{
+  "name": "macrodeck",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "worker"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "start": "npm run start --workspace apps/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test:tools && npm run test:workspaces",
+    "test:tools": "vitest run --config vitest.tools.config.ts",
+    "test:workspaces": "npm run test --workspaces --if-present",
+    "check:no-mock": "node scripts/check-no-mock.mjs",
+    "verify": "npm run check:no-mock && npm run typecheck && npm test",
+    "db:generate": "npm run db:generate --workspace apps/web",
+    "db:migrate": "npm run db:migrate --workspace apps/web",
+    "db:push": "npm run db:push --workspace apps/web",
+    "db:studio": "npm run db:studio --workspace apps/web",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

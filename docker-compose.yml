@@ -1,0 +1,49 @@
+# Lokale Infrastruktur fuer MacroDeck.
+#   npm run docker:up      -> startet Postgres + Redis im Hintergrund
+#   npm run docker:down    -> stoppt beides (Daten bleiben in den Volumes)
+#   npm run docker:reset   -> stoppt und loescht die Volumes
+#
+# TimescaleDB ist laut PROJECT_SPEC.md §2 optional. Phase 0 startet bewusst mit
+# reinem Postgres 16; ein Wechsel auf timescale/timescaledb:latest-pg16 ist
+# spaeter ohne Schemaaenderung moeglich.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: macrodeck-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: macro
+      POSTGRES_PASSWORD: macro
+      POSTGRES_DB: macrodeck
+      # Deterministische, zeitzonenfreie Datenbank — PROJECT_SPEC.md §0.4
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - macrodeck-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U macro -d macrodeck"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: macrodeck-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - macrodeck-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  macrodeck-pgdata:
+  macrodeck-redisdata:
