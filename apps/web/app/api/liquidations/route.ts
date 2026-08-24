@@ -22,6 +22,7 @@ import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { installTelemetrySink } from '@/lib/db/telemetry-sink';
 import * as schema from '@/lib/db/schema';
+import { buildCluster } from '@/lib/derivatives/cluster';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,8 @@ const querySchema = z.object({
   /** Balkenbreite in Sekunden. */
   bucket: z.coerce.number().int().positive().max(86_400).default(300),
   limit: z.coerce.number().int().positive().max(500).default(100),
+  /** Zeilen der Preis-Zeit-Matrix. */
+  priceBuckets: z.coerce.number().int().min(4).max(120).default(40),
 });
 
 export async function GET(request: Request) {
@@ -42,6 +45,7 @@ export async function GET(request: Request) {
     hours: params.get('hours') ?? undefined,
     bucket: params.get('bucket') ?? undefined,
     limit: params.get('limit') ?? undefined,
+    priceBuckets: params.get('priceBuckets') ?? undefined,
   });
 
   if (!parsed.success) {
@@ -51,7 +55,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const { symbol, hours, bucket, limit } = parsed.data;
+  const { symbol, hours, bucket, limit, priceBuckets } = parsed.data;
   const since = Math.floor(Date.now() / 1000) - hours * 3600;
 
   const db = getDb();
@@ -98,6 +102,19 @@ export async function GET(request: Request) {
     const summary = coverage[0];
     const recordingFrom = summary?.firstT === null ? null : Number(summary?.firstT ?? 0) || null;
 
+    // ── Cluster: Preis-Zeit-Matrix aus den gemessenen Ereignissen ────────────
+    const all = await db
+      .select({
+        t: schema.liquidations.t,
+        price: schema.liquidations.price,
+        quoteQty: schema.liquidations.quoteQty,
+        side: schema.liquidations.side,
+      })
+      .from(schema.liquidations)
+      .where(and(eq(schema.liquidations.symbol, symbol), gte(schema.liquidations.t, since)));
+
+    const cluster = buildCluster(all, since, bucket, priceBuckets);
+
     return NextResponse.json({
       symbol,
       tape,
@@ -107,6 +124,7 @@ export async function GET(request: Request) {
         total: Number(b.total),
         count: b.count,
       })),
+      cluster,
       coverage: {
         // Ab wann wirklich mitgeschrieben wurde — nicht ab wann der Markt existiert.
         recordingFrom,
@@ -120,7 +138,13 @@ export async function GET(request: Request) {
               'beginnt mit dem ersten Worker-Start; frühere Ereignisse existieren nicht ' +
               'und werden nicht rekonstruiert.',
       },
-      meta: { since, bucket, hours, generatedAt: Math.floor(Date.now() / 1000) },
+      meta: {
+        since,
+        bucket,
+        hours,
+        priceBuckets,
+        generatedAt: Math.floor(Date.now() / 1000),
+      },
     });
   } catch (error) {
     return NextResponse.json(

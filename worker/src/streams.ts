@@ -12,6 +12,26 @@
 
 export type LiquidationSide = 'long' | 'short';
 
+/**
+ * Vereinheitlicht die Symbolschreibweise über die Börsen hinweg.
+ *
+ * Dieselbe Position heißt bei Binance `BTCUSDT`, bei Bybit `BTCUSDT` und bei
+ * OKX `BTC-USDT-SWAP`. Ohne Vereinheitlichung zerfällt jede Aggregation in
+ * drei Schreibweisen, und ein Liquidations-Cluster über alle Börsen wäre nicht
+ * bildbar.
+ *
+ * Gibt `null` zurück, wenn das Symbol nicht verfolgt wird — dann fällt das
+ * Ereignis weg, weil wir es nicht einordnen können, nicht weil wir es raten.
+ */
+export function normalizeSymbol(symbol: string, tracked: readonly string[]): string | null {
+  const upper = symbol.toUpperCase();
+
+  // OKX: BTC-USDT-SWAP → BTCUSDT. Bybit und Binance liefern es bereits so.
+  const compact = upper.replace(/-SWAP$/, '').replace(/[-_]/g, '');
+
+  return tracked.includes(compact) ? compact : null;
+}
+
 export interface LiquidationEvent {
   exchange: string;
   symbol: string;

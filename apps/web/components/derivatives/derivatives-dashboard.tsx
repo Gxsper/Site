@@ -10,16 +10,20 @@
  *    Workers. Ein leerer Zeitraum davor heißt „nicht aufgezeichnet", nicht
  *    „ruhiger Markt" — deshalb steht der Aufzeichnungsbeginn immer dabei.
  *  - Open Interest und Long/Short liefert Binance nur 31 Tage zurück.
- *  - Eine echte Heatmap erwarteter Liquidationslevel gibt es hier nicht. Sie
- *    wäre ein Modell aus Open Interest und angenommener Leverage-Verteilung —
- *    §4.4 verlangt, das nicht als Messung auszugeben.
+ *  - Das Liquidations-Cluster zeigt **eingetretene** Liquidationen als
+ *    Preis-Zeit-Matrix. Es ist ausdrücklich keine Heatmap erwarteter
+ *    Liquidationslevel: die wäre ein Modell aus Open Interest und angenommener
+ *    Leverage-Verteilung, und §4.4 verlangt, so etwas nicht als Messung
+ *    auszugeben. Hier steht Vergangenheit, dort stünde eine Vermutung.
  */
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 
+import { LiquidationCluster } from '@/components/derivatives/liquidation-cluster';
 import { OverlayChart, type ChartLayer } from '@/components/overlay/overlay-chart';
 import { fetchSeries } from '@/lib/api-client';
+import type { Cluster } from '@/lib/derivatives/cluster';
 
 const DAY = 86_400;
 
@@ -37,13 +41,14 @@ interface LiquidationsResponse {
   symbol: string;
   tape: LiquidationEvent[];
   buckets: { t: number; side: 'long' | 'short'; total: number; count: number }[];
+  cluster: Cluster;
   coverage: {
     recordingFrom: number | null;
     lastEventAt: number | null;
     totalEvents: number;
     hinweis: string;
   };
-  meta: { since: number; bucket: number; hours: number };
+  meta: { since: number; bucket: number; hours: number; priceBuckets: number };
 }
 
 async function getLiquidations(signal: AbortSignal): Promise<LiquidationsResponse> {
@@ -123,6 +128,7 @@ export function DerivativesDashboard() {
   );
 
   const coverage = liquidations.data?.coverage;
+  const cluster = liquidations.data?.cluster;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -304,20 +310,48 @@ export function DerivativesDashboard() {
           )}
         </section>
 
-        {/* §4.4: ehrlich sein statt Coinglass-Qualität vortäuschen. */}
-        <section className="border-border rounded-md border border-dashed p-3">
-          <h2 className="mb-1 text-xs font-semibold">Liquidations-Heatmap — bewusst nicht gebaut</h2>
-          <p className="text-muted-foreground text-[11px] leading-relaxed">
-            Eine Heatmap erwarteter Liquidationslevel ist keine Messung, sondern ein Modell
-            aus Open Interest und einer angenommenen Leverage-Verteilung. Ohne Broker-Daten
-            wäre jede Zahl darin eine Annahme, die wie eine Beobachtung aussieht. §4.4 der
-            Spezifikation verlangt, so etwas zu kennzeichnen — hier ist die ehrlichere
-            Variante, es wegzulassen und stattdessen die tatsächlich eingetretenen
-            Liquidationen oben zu zeigen.
-          </p>
-          <p className="text-muted-foreground mt-2 text-[10px]">
-            Mit einem Coinglass-Abo ließe sich die echte Heatmap anbinden
-            (<code className="bg-accent rounded px-1">/api/futures/liquidation/heatmap/model2</code>).
+        {/* §7: Cluster der eingetretenen Liquidationen — Messung, keine Prognose. */}
+        <section className="border-border bg-card/30 rounded-md border p-3">
+          <div className="mb-2 flex flex-wrap items-baseline gap-x-4">
+            <h2 className="text-xs font-semibold">Liquidations-Cluster</h2>
+            <span className="text-muted-foreground text-[10px]">
+              tatsächlich eingetretene Liquidationen nach Preisniveau und Zeit
+            </span>
+            {cluster?.priceRange && (
+              <span className="text-muted-foreground text-[10px] tabular-nums">
+                Preisspanne {cluster.priceRange.min.toFixed(2)} – {cluster.priceRange.max.toFixed(2)} USD
+              </span>
+            )}
+          </div>
+
+          {cluster && cluster.cells.length > 0 ? (
+            <>
+              <LiquidationCluster
+                cluster={cluster}
+                bucketSeconds={liquidations.data?.meta.bucket ?? 300}
+              />
+              <p className="text-muted-foreground mt-1 text-[10px] leading-relaxed">
+                Jede Zelle ist eine Messung aus dem eigenen Ingest: wie viel USD an diesem
+                Preisniveau in diesem Zeitfenster wirklich liquidiert wurde. Leere Flächen
+                heißen &bdquo;hier ist nichts eingetreten&ldquo; — sie werden nicht mit 0 gefüllt.
+                Farbskala logarithmisch, sonst erdrückt ein einzelner Ausschlag alles andere.
+              </p>
+            </>
+          ) : (
+            <div className="border-border rounded-md border border-dashed p-4">
+              <p className="text-muted-foreground text-xs">
+                Noch zu wenige Ereignisse für ein Cluster. Der Ingest zeichnet ab seinem
+                ersten Start auf; aussagekräftig wird die Darstellung nach einigen Tagen.
+              </p>
+            </div>
+          )}
+
+          <p className="text-muted-foreground border-border mt-2 border-t pt-2 text-[10px] leading-relaxed">
+            <span className="text-foreground font-medium">Nicht zu verwechseln</span> mit einer
+            Heatmap erwarteter Liquidationslevel, wie Coinglass sie zeigt. Die wäre ein Modell
+            aus Open Interest und angenommener Leverage-Verteilung — eine Vermutung über die
+            Zukunft, die wie eine Beobachtung aussieht. §4.4 verlangt, so etwas nicht als
+            Messung auszugeben. Hier steht ausschließlich, was gemessen wurde.
           </p>
         </section>
       </main>

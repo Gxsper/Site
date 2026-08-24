@@ -117,10 +117,25 @@ test.describe('Derivate-Seite', () => {
     await expect(coverage.or(hint).first()).toBeVisible();
   });
 
-  test('erklärt, warum die Heatmap fehlt, statt eine zu erfinden', async ({ page }) => {
+  test('zeigt das Cluster als Messung und grenzt es von einer Prognose ab', async ({ page }) => {
     await page.goto('/derivatives');
-    await expect(page.getByRole('heading', { name: /Heatmap — bewusst nicht gebaut/ })).toBeVisible();
-    await expect(page.getByText(/keine Messung, sondern ein Modell/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Liquidations-Cluster' })).toBeVisible();
+
+    // Der Unterschied zu einer Coinglass-Heatmap muss dabeistehen (§4.4):
+    // hier Vergangenheit, dort eine Vermutung über die Zukunft.
+    await expect(page.getByText(/Nicht zu verwechseln/)).toBeVisible();
+    await expect(page.getByText(/eine Vermutung über die\s+Zukunft/)).toBeVisible();
+  });
+
+  test('nennt bei zu wenigen Ereignissen den Grund statt eine leere Fläche zu zeigen', async ({
+    page,
+  }) => {
+    await page.goto('/derivatives');
+
+    // Entweder ist ein Cluster gezeichnet, oder es steht dort, warum nicht.
+    const chart = page.locator('section', { hasText: 'Liquidations-Cluster' }).locator('canvas');
+    const hint = page.getByText(/Noch zu wenige Ereignisse für ein Cluster/);
+    await expect(chart.or(hint).first()).toBeVisible();
   });
 });
 

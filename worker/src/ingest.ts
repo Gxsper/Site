@@ -17,7 +17,7 @@
 import { Pool } from 'pg';
 
 import { loadRootEnv } from './env.js';
-import { streamConfigs, type LiquidationEvent } from './streams.js';
+import { normalizeSymbol, streamConfigs, type LiquidationEvent } from './streams.js';
 
 loadRootEnv();
 
@@ -58,9 +58,13 @@ function backoff(attempt: number): number {
   return exponential + jitter(exponential / 2);
 }
 
-function isTracked(symbol: string): boolean {
-  const normalised = symbol.replace(/-SWAP$/, '').replace(/-/g, '');
-  return SYMBOLS.some((tracked) => normalised.startsWith(tracked.replace('USDT', '')));
+/**
+ * Bringt ein Ereignis auf die einheitliche Symbolschreibweise oder verwirft es.
+ * Verworfen wird nur, was wir nicht einordnen können — nie geraten.
+ */
+function canonicalise(event: LiquidationEvent): LiquidationEvent | null {
+  const symbol = normalizeSymbol(event.symbol, SYMBOLS);
+  return symbol === null ? null : { ...event, symbol };
 }
 
 /**
@@ -141,11 +145,12 @@ function connect(config: ReturnType<typeof streamConfigs>[number], attempt = 0):
 
     for (const liquidation of events) {
       stats.received++;
-      if (!isTracked(liquidation.symbol)) {
+      const canonical = canonicalise(liquidation);
+      if (canonical === null) {
         stats.dropped++;
         continue;
       }
-      queue.push(liquidation);
+      queue.push(canonical);
     }
   });
 
