@@ -10,7 +10,7 @@ import {
 const validInfra = {
   DATABASE_URL: 'postgres://macro:macro@localhost:5432/macrodeck',
   REDIS_URL: 'redis://localhost:6379',
-} satisfies NodeJS.ProcessEnv;
+};
 
 describe('getEnv', () => {
   it('akzeptiert eine vollstaendige Infrastruktur-Konfiguration', () => {

@@ -58,7 +58,7 @@ export const FORBIDDEN_PATTERNS = [
 
 /** Testdateien duerfen konstruierte Daten enthalten. */
 export function isTestFile(relPath) {
-  const p = relPath.replace(/\/g, '/');
+  const p = relPath.replace(/\\/g, '/');
   return /(^|\/)__tests__\//.test(p) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(p);
 }
 
@@ -78,7 +78,7 @@ function* walk(absDir, cwd) {
     }
     if (!entry.isFile()) continue;
     if (!SCANNED_EXTENSIONS.has(path.extname(entry.name))) continue;
-    const rel = path.relative(cwd, abs).replace(/\/g, '/');
+    const rel = path.relative(cwd, abs).replace(/\\/g, '/');
     if (isTestFile(rel)) continue;
     yield { abs, rel };
   }

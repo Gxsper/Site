@@ -14,6 +14,13 @@
 
 import { z } from 'zod';
 
+/**
+ * Absichtlich nicht `NodeJS.ProcessEnv`: Next.js deklariert dort `NODE_ENV` als
+ * Pflichtfeld, was jeden Aufruf mit einem Teil-Environment (Tests, Worker)
+ * unnoetig verkompliziert. Gelesen werden ohnehin nur String-Keys.
+ */
+export type EnvSource = Readonly<Record<string, string | undefined>>;
+
 const booleanFromString = z
   .enum(['true', 'false', '1', '0'])
   .transform((v) => v === 'true' || v === '1');
@@ -74,7 +81,7 @@ let cached: InfraEnv | null = null;
  * Liest und validiert die Infrastruktur-Variablen. Wirft bei Problemen.
  * Nur serverseitig aufrufen.
  */
-export function getEnv(source: NodeJS.ProcessEnv = process.env): InfraEnv {
+export function getEnv(source: EnvSource = process.env): InfraEnv {
   if (cached && source === process.env) return cached;
 
   const parsed = infraSchema.safeParse(source);
@@ -97,7 +104,7 @@ export function getEnv(source: NodeJS.ProcessEnv = process.env): InfraEnv {
  */
 export function requireProviderKey(
   name: ProviderKeyName,
-  source: NodeJS.ProcessEnv = process.env,
+  source: EnvSource = process.env,
 ): string {
   const value = source[name];
   if (typeof value === 'string' && value.trim().length > 0) return value.trim();
@@ -113,7 +120,7 @@ export function requireProviderKey(
 /** Optionaler Key: gibt null zurueck, wenn nicht gesetzt. Wirft nie. */
 export function optionalProviderKey(
   name: ProviderKeyName,
-  source: NodeJS.ProcessEnv = process.env,
+  source: EnvSource = process.env,
 ): string | null {
   const value = source[name];
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;

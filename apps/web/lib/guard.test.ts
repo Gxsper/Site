@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertNoSilentEmpty, assertRealData, MockDataError } from '@/lib/guard';
+import { assertNoSilentEmpty, assertRealData, DataProvenanceError } from '@/lib/guard';
 import type { SeriesDescriptor, SeriesResponse } from '@/lib/series/types';
 
 // Konstruierte Fixtures sind in Testdateien ausdruecklich erlaubt (§11).
@@ -41,7 +41,7 @@ describe('assertRealData', () => {
   });
 
   it('wirft ohne lastUpdated — Herkunft unklar', () => {
-    expect(() => assertRealData(response({ lastUpdated: 0 }))).toThrow(MockDataError);
+    expect(() => assertRealData(response({ lastUpdated: 0 }))).toThrow(DataProvenanceError);
   });
 
   it('wirft bei NaN als Wert', () => {
@@ -97,7 +97,7 @@ describe('assertNoSilentEmpty', () => {
 
   it('wirft, wenn im Zeitraum laut Descriptor Daten existieren muessten', () => {
     const range = { from: 1_609_459_200, to: 1_640_995_200 }; // 2021 — nach earliest
-    expect(() => assertNoSilentEmpty(response({ points: [] }), range)).toThrow(MockDataError);
+    expect(() => assertNoSilentEmpty(response({ points: [] }), range)).toThrow(DataProvenanceError);
   });
 
   it('wirft nicht, wenn Punkte vorhanden sind', () => {
