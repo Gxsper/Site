@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   EnvError,
+  getCacheBackend,
   getEnv,
   optionalProviderKey,
   requireProviderKey,
@@ -43,6 +44,32 @@ describe('getEnv', () => {
 
   it('lehnt ein unbekanntes LOG_LEVEL ab, statt still auf info zu fallen', () => {
     expect(() => getEnv({ ...validInfra, LOG_LEVEL: 'verbose' })).toThrow(EnvError);
+  });
+});
+
+describe('getCacheBackend', () => {
+  it('waehlt Redis, sobald eine REDIS_URL gesetzt ist', () => {
+    expect(getCacheBackend(getEnv({ ...validInfra }))).toBe('redis');
+  });
+
+  it('faellt ohne REDIS_URL auf Postgres zurueck', () => {
+    expect(getCacheBackend(getEnv({ DATABASE_URL: validInfra.DATABASE_URL }))).toBe('postgres');
+  });
+
+  it('lehnt eine REDIS_URL mit falschem Schema ab, statt still auf Postgres zu wechseln', () => {
+    expect(() => getEnv({ ...validInfra, REDIS_URL: 'http://localhost:6379' })).toThrow(EnvError);
+  });
+
+  it('behandelt eine leere REDIS_URL als nicht konfiguriert, nicht als ungueltig', () => {
+    // `REDIS_URL=` in einer .env-Datei liefert einen leeren String.
+    const env = getEnv({ DATABASE_URL: validInfra.DATABASE_URL, REDIS_URL: '' });
+    expect(env.REDIS_URL).toBeUndefined();
+    expect(getCacheBackend(env)).toBe('postgres');
+  });
+
+  it('behandelt eine REDIS_URL aus Leerzeichen ebenfalls als nicht konfiguriert', () => {
+    expect(getEnv({ DATABASE_URL: validInfra.DATABASE_URL, REDIS_URL: '   ' }).REDIS_URL)
+      .toBeUndefined();
   });
 });
 

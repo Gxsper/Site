@@ -32,12 +32,22 @@ const infraSchema = z.object({
     .refine((v) => v.startsWith('postgres://') || v.startsWith('postgresql://'), {
       message: 'muss eine postgres:// oder postgresql:// URL sein',
     }),
-  REDIS_URL: z
-    .string()
-    .min(1, 'fehlt')
-    .refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
-      message: 'muss eine redis:// oder rediss:// URL sein',
-    }),
+  /**
+   * Optional. Ohne Redis laeuft der Cache aus §10 Layer 2 gegen Postgres —
+   * dieselbe TTL- und Token-Bucket-Semantik, anderer Speicher. Siehe
+   * getCacheBackend() und docs/adr/0001-cache-backend.md.
+   */
+  REDIS_URL: z.preprocess(
+    // `REDIS_URL=` in einer .env-Datei kommt als leerer String an, nicht als
+    // undefined. Leer heisst "nicht konfiguriert", nicht "ungueltig".
+    (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+    z
+      .string()
+      .refine((v) => v.startsWith('redis://') || v.startsWith('rediss://'), {
+        message: 'muss eine redis:// oder rediss:// URL sein',
+      })
+      .optional(),
+  ),
   ENABLE_WS_INGEST: booleanFromString.default('false'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
@@ -124,6 +134,20 @@ export function optionalProviderKey(
 ): string | null {
   const value = source[name];
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+export type CacheBackend = 'redis' | 'postgres';
+
+/**
+ * Welcher Speicher hinter Cache-Layer 2 und dem Token-Bucket steht (§10).
+ *
+ * Redis ist die bevorzugte Wahl und wird genommen, sobald REDIS_URL gesetzt
+ * ist. Ohne Redis faellt der Cache auf Postgres zurueck — gleiche Semantik,
+ * langsamer, aber korrekt. Das ist eine Speicherentscheidung, keine
+ * Datenentscheidung: es werden dadurch nie andere Werte ausgeliefert.
+ */
+export function getCacheBackend(env: InfraEnv): CacheBackend {
+  return env.REDIS_URL ? 'redis' : 'postgres';
 }
 
 /** Nur fuer Tests: den Cache von `getEnv` leeren. */

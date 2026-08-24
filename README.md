@@ -8,21 +8,32 @@ und kein UI — das ist so vorgesehen (§13).
 
 ## Voraussetzungen
 
-- Node.js ≥ 20.11 (empfohlen: 22, siehe `.nvmrc`)
-- Docker Desktop (für Postgres 16 + Redis 7)
+- Node.js ≥ 20.11 (siehe `.nvmrc`)
+- PostgreSQL 16 — entweder per Docker (`npm run docker:up`) oder nativ installiert
+- Redis 7 ist **optional**, siehe [ADR 0001](docs/adr/0001-cache-backend.md)
 
 ## Setup
 
 ```bash
 cp .env.example .env.local
 npm install
-npm run docker:up
-npm run db:push
+npm run db:migrate
 npm run dev
 ```
 
-`.env.local` wird nie committet. In Phase 0 reichen `DATABASE_URL` und `REDIS_URL`;
-`FRED_API_KEY` wird ab Phase 1 erzwungen, sobald der erste Provider konstruiert wird.
+Für die Datenbank gibt es zwei Wege:
+
+- **Mit Docker:** `npm run docker:up` startet Postgres 16 und Redis 7.
+- **Ohne Docker** (z. B. wenn keine Virtualisierung verfügbar ist): PostgreSQL 16
+  nativ installieren, dann Rolle und Datenbank passend zur `DATABASE_URL` anlegen:
+
+  ```bash
+  psql -U postgres -c "CREATE ROLE macro LOGIN PASSWORD 'macro'; CREATE DATABASE macrodeck OWNER macro;"
+  ```
+
+`.env.local` wird nie committet. In Phase 0 reicht `DATABASE_URL`. `REDIS_URL` ist
+optional — ohne Redis läuft der Cache aus §10 Layer 2 gegen Postgres. `FRED_API_KEY`
+wird ab Phase 1 erzwungen, sobald der erste Provider konstruiert wird.
 
 ## Befehle
 
@@ -52,7 +63,9 @@ npm run dev
 │     └─ guard.ts        Laufzeit-Durchsetzung von §11
 ├─ worker/               WS-Ingest, ab Phase 6
 ├─ scripts/              Repo-Tooling (check-no-mock)
-└─ docs/api-samples/     Provider-Response-Beispiele — nur Doku, nie Laufzeitquelle
+└─ docs/
+   ├─ adr/               Architekturentscheidungen mit Begründung
+   └─ api-samples/       Verifizierte Provider-Responses — nur Doku, nie Laufzeitquelle
 ```
 
 ## Die wichtigste Regel
